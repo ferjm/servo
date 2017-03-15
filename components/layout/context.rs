@@ -9,6 +9,7 @@ use gfx::display_list::{WebRenderImageInfo, OpaqueNode};
 use gfx::font_cache_thread::FontCacheThread;
 use gfx::font_context::FontContext;
 use heapsize::HeapSizeOf;
+use net_traits::image_cache::ImageCache;
 use net_traits::image_cache_thread::{ImageCacheThread, ImageState, CanRequestImages};
 use net_traits::image_cache_thread::{ImageOrMetadataAvailable, UsePlaceholder};
 use opaque_node::OpaqueNodeMethods;
@@ -79,6 +80,9 @@ pub struct LayoutContext {
     /// Bits shared by the layout and style system.
     pub style_context: SharedStyleContext,
 
+    /// XXX.
+    pub image_cache: Arc<ImageCache>,
+
     /// The shared image cache thread.
     pub image_cache_thread: Mutex<ImageCacheThread>,
 
@@ -124,6 +128,9 @@ impl LayoutContext {
         } else {
             CanRequestImages::No
         };
+
+        //XXX
+        self.image_cache.inc();
 
         // See if the image is already available
         let result = self.image_cache_thread.lock().unwrap()

@@ -73,6 +73,7 @@ use microtask::{MicrotaskQueue, Microtask};
 use msg::constellation_msg::{FrameId, FrameType, PipelineId, PipelineNamespace};
 use net_traits::{CoreResourceMsg, FetchMetadata, FetchResponseListener};
 use net_traits::{IpcSend, Metadata, ReferrerPolicy, ResourceThreads};
+use net_traits::image_cache::ImageCache;
 use net_traits::image_cache_thread::{PendingImageResponse, ImageCacheThread};
 use net_traits::request::{CredentialsMode, Destination, RequestInit};
 use net_traits::storage_thread::StorageType;
@@ -408,6 +409,8 @@ pub struct ScriptThread {
     registration_map: DOMRefCell<HashMap<ServoUrl, JS<ServiceWorkerRegistration>>>,
     /// A job queue for Service Workers keyed by their scope url
     job_queue_map: Rc<JobQueue>,
+    /// XXX
+    image_cache: Arc<ImageCache>,
     /// A handle to the image cache thread.
     image_cache_thread: ImageCacheThread,
     /// A handle to the resource thread. This is an `Arc` to avoid running out of file descriptors if
@@ -677,6 +680,7 @@ impl ScriptThread {
             registration_map: DOMRefCell::new(HashMap::new()),
             job_queue_map: Rc::new(JobQueue::new()),
 
+            image_cache: state.image_cache.clone(),
             image_cache_thread: state.image_cache_thread,
             image_cache_channel: image_cache_channel,
             image_cache_port: image_cache_port,

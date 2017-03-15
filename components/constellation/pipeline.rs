@@ -17,6 +17,7 @@ use ipc_channel::router::ROUTER;
 use layout_traits::LayoutThreadFactory;
 use msg::constellation_msg::{FrameId, FrameType, PipelineId, PipelineNamespaceId};
 use net_traits::{IpcSend, ResourceThreads};
+use net_traits::image_cache::ImageCache;
 use net_traits::image_cache_thread::ImageCacheThread;
 use profile_traits::mem as profile_mem;
 use profile_traits::time;
@@ -34,6 +35,7 @@ use std::env;
 use std::ffi::OsStr;
 use std::process;
 use std::rc::Rc;
+use std::sync::Arc;
 use std::sync::mpsc::Sender;
 use style_traits::CSSPixel;
 use webrender_traits;
@@ -476,6 +478,7 @@ impl UnprivilegedPipelineContent {
         where LTF: LayoutThreadFactory<Message=Message>,
               STF: ScriptThreadFactory<Message=Message>
     {
+        let image_cache = Arc::new(ImageCache::new());
         let layout_pair = STF::create(InitialScriptState {
             id: self.id,
             frame_id: self.frame_id,
@@ -488,6 +491,7 @@ impl UnprivilegedPipelineContent {
             scheduler_chan: self.scheduler_chan,
             bluetooth_thread: self.bluetooth_thread,
             resource_threads: self.resource_threads,
+            image_cache: image_cache.clone(),
             image_cache_thread: self.image_cache_thread.clone(),
             time_profiler_chan: self.time_profiler_chan.clone(),
             mem_profiler_chan: self.mem_profiler_chan.clone(),
@@ -506,6 +510,7 @@ impl UnprivilegedPipelineContent {
                     self.pipeline_port,
                     self.layout_to_constellation_chan,
                     self.script_chan,
+                    image_cache.clone(),
                     self.image_cache_thread,
                     self.font_cache_thread,
                     self.time_profiler_chan,

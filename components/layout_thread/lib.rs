@@ -76,6 +76,7 @@ use layout::wrapper::LayoutNodeLayoutData;
 use layout::wrapper::drop_style_and_layout_data;
 use layout_traits::LayoutThreadFactory;
 use msg::constellation_msg::{FrameId, PipelineId};
+use net_traits::image_cache::ImageCache;
 use net_traits::image_cache_thread::ImageCacheThread;
 use net_traits::image_cache_thread::UsePlaceholder;
 use parking_lot::RwLock;
@@ -156,6 +157,9 @@ pub struct LayoutThread {
 
     /// The channel on which messages can be sent to the memory profiler.
     mem_profiler_chan: mem::ProfilerChan,
+
+    /// XXX
+    image_cache: Arc<ImageCache>,
 
     /// The channel on which messages can be sent to the image cache.
     image_cache_thread: ImageCacheThread,
@@ -242,6 +246,7 @@ impl LayoutThreadFactory for LayoutThread {
               pipeline_port: IpcReceiver<LayoutControlMsg>,
               constellation_chan: IpcSender<ConstellationMsg>,
               script_chan: IpcSender<ConstellationControlMsg>,
+              image_cache: Arc<ImageCache>,
               image_cache_thread: ImageCacheThread,
               font_cache_thread: FontCacheThread,
               time_profiler_chan: time::ProfilerChan,
@@ -265,6 +270,7 @@ impl LayoutThreadFactory for LayoutThread {
                                                pipeline_port,
                                                constellation_chan,
                                                script_chan,
+                                               image_cache.clone(),
                                                image_cache_thread,
                                                font_cache_thread,
                                                time_profiler_chan,
@@ -378,6 +384,7 @@ impl LayoutThread {
            pipeline_port: IpcReceiver<LayoutControlMsg>,
            constellation_chan: IpcSender<ConstellationMsg>,
            script_chan: IpcSender<ConstellationControlMsg>,
+           image_cache: Arc<ImageCache>,
            image_cache_thread: ImageCacheThread,
            font_cache_thread: FontCacheThread,
            time_profiler_chan: time::ProfilerChan,
@@ -425,6 +432,7 @@ impl LayoutThread {
             constellation_chan: constellation_chan.clone(),
             time_profiler_chan: time_profiler_chan,
             mem_profiler_chan: mem_profiler_chan,
+            image_cache: image_cache.clone(),
             image_cache_thread: image_cache_thread,
             font_cache_thread: font_cache_thread,
             first_reflow: true,
@@ -516,6 +524,7 @@ impl LayoutThread {
                 // properly.
                 default_computed_values: Arc::new(ComputedValues::initial_values().clone()),
             },
+            image_cache: self.image_cache.clone(),
             image_cache_thread: Mutex::new(self.image_cache_thread.clone()),
             font_cache_thread: Mutex::new(self.font_cache_thread.clone()),
             webrender_image_cache: self.webrender_image_cache.clone(),
@@ -690,6 +699,7 @@ impl LayoutThread {
                              info.pipeline_port,
                              info.constellation_chan,
                              info.script_chan.clone(),
+                             self.image_cache.clone(),
                              self.image_cache_thread.clone(),
                              self.font_cache_thread.clone(),
                              self.time_profiler_chan.clone(),

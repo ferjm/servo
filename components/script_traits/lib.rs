@@ -57,6 +57,7 @@ use msg::constellation_msg::{FrameId, FrameType, Key, KeyModifiers, KeyState};
 use msg::constellation_msg::{PipelineId, PipelineNamespaceId, TraversalDirection};
 use net_traits::{ReferrerPolicy, ResourceThreads};
 use net_traits::image::base::Image;
+use net_traits::image_cache::ImageCache;
 use net_traits::image_cache_thread::ImageCacheThread;
 use net_traits::response::HttpsState;
 use net_traits::storage_thread::StorageType;
@@ -66,6 +67,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use servo_url::ServoUrl;
 use std::collections::HashMap;
 use std::fmt;
+use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender};
 use style_traits::{CSSPixel, UnsafeNode};
 use webdriver_msg::{LoadStatus, WebDriverScriptCommand};
@@ -479,6 +481,8 @@ pub struct InitialScriptState {
     pub resource_threads: ResourceThreads,
     /// A channel to the bluetooth thread.
     pub bluetooth_thread: IpcSender<BluetoothRequest>,
+    /// XXX
+    pub image_cache: Arc<ImageCache>,
     /// A channel to the image cache thread.
     pub image_cache_thread: ImageCacheThread,
     /// A channel to the time profiler thread.

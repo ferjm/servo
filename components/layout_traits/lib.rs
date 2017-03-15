@@ -21,11 +21,13 @@ extern crate webrender_traits;
 use gfx::font_cache_thread::FontCacheThread;
 use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use msg::constellation_msg::{FrameId, PipelineId};
+use net_traits::image_cache::ImageCache;
 use net_traits::image_cache_thread::ImageCacheThread;
 use profile_traits::{mem, time};
 use script_traits::{ConstellationControlMsg, LayoutControlMsg};
 use script_traits::LayoutMsg as ConstellationMsg;
 use servo_url::ServoUrl;
+use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender};
 
 // A static method creating a layout thread
@@ -40,6 +42,7 @@ pub trait LayoutThreadFactory {
               pipeline_port: IpcReceiver<LayoutControlMsg>,
               constellation_chan: IpcSender<ConstellationMsg>,
               script_chan: IpcSender<ConstellationControlMsg>,
+              image_cache: Arc<ImageCache>,
               image_cache_thread: ImageCacheThread,
               font_cache_thread: FontCacheThread,
               time_profiler_chan: time::ProfilerChan,

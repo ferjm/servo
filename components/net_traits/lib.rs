@@ -52,6 +52,7 @@ use websocket::header;
 pub mod blob_url_store;
 pub mod filemanager_thread;
 pub mod hosts;
+pub mod image_cache;
 pub mod image_cache_thread;
 pub mod net_error_list;
 pub mod pub_domains;
