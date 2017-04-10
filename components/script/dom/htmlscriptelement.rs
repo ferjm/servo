@@ -34,11 +34,18 @@ use net_traits::{FetchMetadata, FetchResponseListener, Metadata, NetworkError};
 use net_traits::request::{CorsSettings, CredentialsMode, Destination, RequestInit, RequestMode, Type as RequestType};
 use network_listener::{NetworkListener, PreInvoke};
 use servo_atoms::Atom;
+use servo_config::opts;
 use servo_url::ServoUrl;
 use std::ascii::AsciiExt;
 use std::cell::Cell;
+use std::error::Error;
+use std::fs::File;
+use std::io::{Read, Write};
+use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 use style::str::{HTML_SPACE_CHARACTERS, StaticStringVec};
+use url::percent_encoding::percent_encode;
+use uuid::Uuid;
 
 #[dom_struct]
 pub struct HTMLScriptElement {
@@ -450,6 +457,55 @@ impl HTMLScriptElement {
         }
     }
 
+    fn unminify_js(&self, script: &mut ClassicScript) {
+        if !opts::get().unminify_js {
+            return;
+        }
+
+        debug!("unminifying Javascript");
+        let process = match Command::new("js-beautify")
+                                    .arg("--stdin")
+                                    .stdin(Stdio::piped())
+                                    .stdout(Stdio::piped())
+                                    .spawn() {
+            Err(why) => {
+                warn!("Could not spawn js-beautify {}", why.description());
+                return;
+            },
+            Ok(process) => process,
+        };
+
+        let mut script_content = String::from(script.text.clone());
+        match process.stdin.unwrap().write_all(format!("{:?}", script_content).as_bytes()) {
+            Err(why) => {
+                warn!("Could not write script content to stdin {}", why.description());
+                return;
+            },
+            Ok(_) => {},
+        }
+
+        match process.stdout.unwrap().read_to_string(&mut script_content) {
+            Err(why) => warn!("Could not write unminified script to out file {}", why.description()),
+            Ok(_) => {
+                script.text = DOMString::from(script_content);
+                debug!("UNMINIFIED {:?}", script_content);
+                let window = window_from_node(self);
+                if let Some(mut unminified_dir) = window.unminified_dir() {
+                    let mut file = if script.url.path() == "/" {
+                        debug!("INLINE SCRIPT");
+                        File::create(unminified_dir.join(Uuid::new_v4().to_string())).unwrap()
+                    } else {
+                        debug!("EXTERNAL SCRIPT");
+                        File::create(unminified_dir.join("babana")).unwrap()
+                    };
+                    if let Err(_) = file.write_all(script.text.as_bytes()) {
+                        warn!("Could not write unminified script to out file");
+                    }
+                };
+            }
+        }
+    }
+
     /// https://html.spec.whatwg.org/multipage/#execute-the-script-block
     pub fn execute(&self, result: Result<ClassicScript, NetworkError>) {
         // Step 1.
@@ -458,7 +514,7 @@ impl HTMLScriptElement {
             return;
         }
 
-        let script = match result {
+        let mut script = match result {
             // Step 2.
             Err(e) => {
                 warn!("error loading script {:?}", e);
@@ -468,6 +524,8 @@ impl HTMLScriptElement {
 
             Ok(script) => script,
         };
+
+        self.unminify_js(&mut script);
 
         // Step 3.
         let neutralized_doc = if script.external {
