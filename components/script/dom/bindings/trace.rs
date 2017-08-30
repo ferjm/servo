@@ -91,7 +91,7 @@ use smallvec::SmallVec;
 use std::cell::{Cell, RefCell, UnsafeCell};
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 use std::hash::{BuildHasher, Hash};
-use std::ops::{Deref, DerefMut};
+use std::ops::{Deref, DerefMut, Range};
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
@@ -222,6 +222,16 @@ unsafe impl JSTraceable for Heap<*mut JSObject> {
 unsafe impl JSTraceable for Heap<JSVal> {
     unsafe fn trace(&self, trc: *mut JSTracer) {
         trace_jsval(trc, "heap value", self);
+    }
+}
+
+unsafe impl<T> JSTraceable for Range<T>
+where
+    T: JSTraceable,
+{
+    unsafe fn trace(&self, trc: *mut JSTracer) {
+        self.start.trace(trc);
+        self.end.trace(trc);
     }
 }
 

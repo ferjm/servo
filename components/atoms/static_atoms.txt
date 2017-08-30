@@ -1,6 +1,7 @@
 DOMContentLoaded
 abort
 activate
+addsourcebuffer
 beforeunload
 button
 canplay
@@ -57,6 +58,7 @@ radio
 range
 readystatechange
 reftest-wait
+removesourcebuffer
 reset
 right
 sans-serif
@@ -64,6 +66,8 @@ screen
 search
 select
 serif
+sourceended
+sourceopen
 statechange
 storage
 submit
@@ -74,6 +78,9 @@ time
 timeupdate
 toggle
 transitionend
+update
+updateend
+updatestart
 url
 waiting
 webglcontextcreationerror
