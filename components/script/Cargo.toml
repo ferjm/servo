@@ -69,6 +69,7 @@ num-traits = "0.1.32"
 offscreen_gl_context = { version = "0.15", features = ["serde"] }
 parking_lot = "0.4"
 phf = "0.7.18"
+playground = {path = "../playground"}
 profile_traits = {path = "../profile_traits"}
 ref_filter_map = "1.0.1"
 ref_slice = "1.0"
