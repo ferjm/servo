@@ -1827,6 +1827,31 @@ impl FragmentDisplayListBuilding for Fragment {
             SpecificFragmentInfo::TableColumn(_) => {
                 panic!("Shouldn't see table column fragments here.")
             },
+            SpecificFragmentInfo::Media(ref media_fragment_info) => {
+                if let Some((ref image_key, width, height)) = media_fragment_info.frame_source.get_current_frame() {
+                    let base = state.create_base_display_item(
+                        &stacking_relative_content_box,
+                        build_local_clip(&self.style),
+                        self.node,
+                        self.style.get_cursor(CursorKind::Default),
+                        DisplayListSection::Content);
+                    let display_item = DisplayItem::Image(Box::new(ImageDisplayItem {
+                        base: base,
+                        webrender_image: WebRenderImageInfo {
+                            width: width as u32,
+                            height: height as u32,
+                            format: PixelFormat::BGRA8,
+                            key: Some(*image_key),
+                        },
+                        image_data: None,
+                        stretch_size: stacking_relative_content_box.size.to_layout(),
+                        tile_spacing: LayoutSize::zero(),
+                        image_rendering: ImageRendering::Auto,
+                    }));
+
+                    state.add_display_item(display_item);
+                }
+            }
         }
 
         state.current_clipping_and_scrolling = previous_clipping_and_scrolling;
