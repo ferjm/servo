@@ -44,7 +44,7 @@ pub struct MediaSource {
 impl MediaSource {
     fn new(window: &Window) -> DomRoot<Self> {
         reflect_dom_object(
-            box Self::new_inherited(),
+            Box::new(Self::new_inherited()),
             window,
             MediaSourceBinding::Wrap,
         )

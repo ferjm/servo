@@ -23,7 +23,7 @@ pub struct SourceBufferList {
     list_mode: ListMode,
 }
 
-#[derive(HeapSizeOf, JSTraceable)]
+#[derive(MallocSizeOf, JSTraceable)]
 pub enum ListMode {
     All,
     Active,
@@ -40,7 +40,7 @@ impl SourceBufferList {
 
     pub fn new(media_source: &MediaSource, list_mode: ListMode) -> DomRoot<Self> {
         reflect_dom_object(
-            box Self::new_inherited(media_source, list_mode),
+            Box::new(Self::new_inherited(media_source, list_mode)),
             &*media_source.global(),
             SourceBufferListBinding::Wrap,
         )

@@ -23,7 +23,6 @@ use dom_struct::dom_struct;
 use js::jsapi::{JSContext, JSObject, Rooted};
 use js::typedarray::{ArrayBuffer, ArrayBufferView};
 use mime::{Mime, SubLevel, TopLevel};
-use std::ascii::AsciiExt;
 use std::cell::Cell;
 use std::collections::VecDeque;
 use std::f64;
@@ -52,7 +51,7 @@ pub struct SourceBuffer {
     /// https://w3c.github.io/media-source/#sourcebuffer-buffer-full-flag
     buffer_full: Cell<bool>,
     /// The MIME type provided when that `SourceBuffer` was created.
-    #[ignore_heap_size_of = "defined in mime"]
+    #[ignore_malloc_size_of = "defined in mime"]
     mime: Mime,
     /// Whether we are currently running the range removal algorithm.
     in_range_removal: Cell<bool>,
@@ -67,7 +66,7 @@ pub struct SourceBuffer {
 }
 
 /// https://w3c.github.io/media-source/#sourcebuffer-append-state
-#[derive(Clone, Copy, JSTraceable, HeapSizeOf, PartialEq)]
+#[derive(Clone, Copy, JSTraceable, MallocSizeOf, PartialEq)]
 enum AppendState {
     WaitingForSegment,
     ParsingInitSegment,
@@ -75,7 +74,7 @@ enum AppendState {
 }
 
 /// https://w3c.github.io/media-source/#sourcebuffer-generate-timestamps-flag
-#[derive(Clone, Copy, JSTraceable, HeapSizeOf, PartialEq)]
+#[derive(Clone, Copy, JSTraceable, MallocSizeOf, PartialEq)]
 enum TimestampMode {
     /// Timestamps are extracted from source.
     FromSource,
@@ -90,7 +89,7 @@ impl SourceBuffer {
     ) -> DomRoot<Self> {
 
         reflect_dom_object(
-            box Self::new_inherited(parent_media_source, mime),
+            Box::new(Self::new_inherited(parent_media_source, mime)),
             &*parent_media_source.global(),
             SourceBufferBinding::Wrap,
         )

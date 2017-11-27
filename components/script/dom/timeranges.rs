@@ -20,7 +20,7 @@ use std::ops::Range;
 #[dom_struct]
 pub struct TimeRanges {
     reflector: Reflector,
-    #[ignore_heap_size_of = "FIXME(nox): https://github.com/servo/heapsize/pull/89"]
+    #[ignore_malloc_size_of = "FIXME(nox): https://github.com/servo/heapsize/pull/89"]
     ranges: Vec<Range<Finite<f64>>>,
 }
 
@@ -31,7 +31,7 @@ impl TimeRanges {
 
     pub fn new(window: &Window, ranges: Vec<Range<Finite<f64>>>) -> DomRoot<Self> {
         reflect_dom_object(
-            box Self::new_inherited(ranges),
+            Box::new(Self::new_inherited(ranges)),
             window,
             TimeRangesBinding::Wrap,
         )
