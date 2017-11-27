@@ -50,6 +50,7 @@ use dom::document::PendingRestyle;
 use encoding_rs::Encoding;
 use euclid::{Transform2D, Transform3D, Point2D, Vector2D, Rect, TypedSize2D, TypedScale};
 use euclid::Length as EuclidLength;
+use gecko_media::{GeckoMediaSource, GeckoMediaSourceBuffer, GeckoMediaSourceBufferList};
 use html5ever::{Prefix, LocalName, Namespace, QualName};
 use html5ever::buffer_queue::BufferQueue;
 use html5ever::tendril::IncompleteUtf8;
@@ -429,6 +430,9 @@ unsafe_no_jsmanaged_fields!(WebVRGamepadHand);
 unsafe_no_jsmanaged_fields!(ScriptToConstellationChan);
 unsafe_no_jsmanaged_fields!(InteractiveMetrics);
 unsafe_no_jsmanaged_fields!(InteractiveWindow);
+unsafe_no_jsmanaged_fields!(GeckoMediaSource);
+unsafe_no_jsmanaged_fields!(GeckoMediaSourceBuffer);
+unsafe_no_jsmanaged_fields!(GeckoMediaSourceBufferList);
 
 unsafe impl<'a> JSTraceable for &'a str {
     #[inline]

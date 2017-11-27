@@ -66,6 +66,7 @@ screen
 search
 select
 serif
+sourceclose
 sourceended
 sourceopen
 statechange

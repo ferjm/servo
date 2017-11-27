@@ -22,9 +22,117 @@ use dom::sourcebufferlist::{ListMode, SourceBufferList};
 use dom::timeranges::TimeRanges;
 use dom::window::Window;
 use dom_struct::dom_struct;
+use gecko_media::{GeckoMedia, GeckoMediaSource};
+use gecko_media::{GeckoMediaSourceImpl, GeckoMediaTimeInterval};
 use mime::Mime;
 use std::cell::{Cell, Ref};
 use std::f64;
+use std::ptr;
+use std::rc::Rc;
+
+// Arbitrary limit set by GeckoMedia.
+static MAX_SOURCE_BUFFERS: usize = 12;
+
+#[derive(JSTraceable, MallocSizeOf)]
+#[allow(unrooted_must_root)]
+struct MediaSourceAttributes {
+    owner: MutNullableDom<MediaSource>,
+    source_buffers: DomRefCell<Vec<Dom<SourceBuffer>>>,
+    /// https://w3c.github.io/media-source/#dom-mediasource-activesourcebuffers
+    source_buffers_list: MutNullableDom<SourceBufferList>,
+    /// https://w3c.github.io/media-source/#dom-mediasource-activesourcebuffers
+    active_source_buffers_list: MutNullableDom<SourceBufferList>,
+    /// https://w3c.github.io/media-source/#dom-readystate
+    ready_state: Cell<ReadyState>,
+    /// https://w3c.github.io/media-source/#dom-mediasource-duration
+    duration: Cell<f64>,
+    /// https://w3c.github.io/media-source/#live-seekable-range
+    live_seekable_range: MutNullableDom<TimeRanges>,
+}
+
+impl MediaSourceAttributes {
+    pub fn new() -> Self {
+        Self {
+            owner: Default::default(),
+            source_buffers: Default::default(),
+            source_buffers_list: Default::default(),
+            active_source_buffers_list: Default::default(),
+            ready_state: Cell::new(ReadyState::Closed),
+            duration: Cell::new(f64::NAN),
+            live_seekable_range: Default::default(),
+        }
+    }
+
+    pub fn set_owner(&self, owner: &MediaSource) {
+        self.owner.set(Some(owner));
+    }
+}
+
+impl GeckoMediaSourceImpl for MediaSourceAttributes {
+    fn get_ready_state(&self) -> i32 {
+        self.ready_state.get().into()
+    }
+
+    fn set_ready_state(&self, ready_state: i32) {
+        match self.owner.get() {
+            Some(owner) => owner.set_ready_state(ready_state.into()),
+            None => warn!("Could not set ready state. MediaSource gone."),
+        };
+    }
+
+    fn get_duration(&self) -> f64 {
+        self.duration.get()
+    }
+
+    fn has_live_seekable_range(&self) -> bool {
+        self.live_seekable_range.get().is_some()
+    }
+
+    fn get_live_seekable_range(&self) -> GeckoMediaTimeInterval {
+        let mut start = 0.;
+        let mut end = 0.;
+        if let Some(time_ranges) = self.live_seekable_range.get() {
+            let ranges = time_ranges.ranges();
+            if !ranges.is_empty() {
+                let range = ranges.get(0).ok_or(Some(start..end)).unwrap();
+                start = *range.start;
+                end = *range.end;
+            }
+        }
+        GeckoMediaTimeInterval {
+            mStart: start,
+            mEnd: end,
+        }
+    }
+
+    fn get_source_buffers(&self) -> *mut usize {
+        match self.owner.get() {
+            Some(owner) => {
+                let id = Box::new(
+                    self.source_buffers_list
+                        .or_init(|| SourceBufferList::new(&*owner, ListMode::All))
+                        .id(),
+                );
+                Box::into_raw(id)
+            },
+            None => ptr::null_mut(),
+        }
+    }
+
+    fn get_active_source_buffers(&self) -> *mut usize {
+        match self.owner.get() {
+            Some(ref owner) => {
+                let id = Box::new(
+                    self.source_buffers_list
+                        .or_init(|| SourceBufferList::new(&*owner, ListMode::Active))
+                        .id(),
+                );
+                Box::into_raw(id)
+            },
+            None => ptr::null_mut(),
+        }
+    }
+}
 
 /// A `MediaSource` DOM instance.
 ///
@@ -32,13 +140,10 @@ use std::f64;
 #[dom_struct]
 pub struct MediaSource {
     eventtarget: EventTarget,
-    source_buffers: DomRefCell<Vec<Dom<SourceBuffer>>>,
-    source_buffers_list: MutNullableDom<SourceBufferList>,
-    active_source_buffers_list: MutNullableDom<SourceBufferList>,
-    ready_state: Cell<ReadyState>,
-    duration: Cell<f64>,
-    /// https://w3c.github.io/media-source/#live-seekable-range
-    live_seekable_range: MutNullableDom<TimeRanges>,
+    #[ignore_malloc_size_of = "Rc"]
+    attributes: Rc<MediaSourceAttributes>,
+    #[ignore_malloc_size_of = "Defined in GeckoMedia"]
+    gecko_media: GeckoMediaSource,
 }
 
 impl MediaSource {
@@ -50,40 +155,108 @@ impl MediaSource {
         )
     }
 
+    #[allow(unrooted_must_root)]
     fn new_inherited() -> Self {
-        Self {
+        let attributes = Rc::new(MediaSourceAttributes::new());
+        let weak_attributes = Rc::downgrade(&(&attributes));
+        let this = Self {
+            attributes: attributes.clone(),
             eventtarget: EventTarget::new_inherited(),
-            source_buffers: Default::default(),
-            source_buffers_list: Default::default(),
-            active_source_buffers_list: Default::default(),
-            ready_state: Cell::new(ReadyState::Closed),
-            duration: Cell::new(f64::NAN),
-            live_seekable_range: Default::default(),
-        }
+            gecko_media: GeckoMedia::create_media_source(weak_attributes).unwrap(),
+        };
+        attributes.set_owner(&this);
+        this
+    }
+
+    pub fn id(&self) -> usize {
+        self.gecko_media.get_id()
     }
 
     pub fn source_buffers<'a>(&'a self) -> Ref<'a, [Dom<SourceBuffer>]> {
-        Ref::map(self.source_buffers.borrow(), |buffers| &**buffers)
+        Ref::map(
+            self.attributes.source_buffers.borrow(),
+            |buffers| &**buffers,
+        )
     }
 
-    /// https://w3c.github.io/media-source/#dom-mediasource-istypesupported
+    pub fn append_source_buffer(&self, source_buffer: &SourceBuffer, notify: bool) {
+        self.attributes.source_buffers.borrow_mut().push(
+            Dom::from_ref(
+                &*source_buffer,
+            ),
+        );
+        if !notify {
+            return;
+        }
+        // TODO(nox): If we do our own `Runnable`, we could avoid creating
+        // the `sourceBuffers` object if the user doesn't access it.
+        let global = self.global();
+        let window = global.as_window();
+        window.dom_manipulation_task_source().queue_simple_event(
+            self.SourceBuffers().upcast(),
+            atom!("addsourcebuffer"),
+            &window,
+        );
+    }
+
+    pub fn clear_source_buffers(&self, list_mode: &ListMode) {
+        let mut source_buffers = self.attributes.source_buffers.borrow_mut();
+        match *list_mode {
+            ListMode::All => source_buffers.clear(),
+            ListMode::Active => {
+                source_buffers.retain(|ref buffer| !buffer.is_active());
+            },
+        };
+    }
+
     fn parse_mime_type(input: &str) -> Option<Mime> {
-        // Steps 1-2.
         let _mime = match input.parse::<Mime>() {
             Ok(mime) => mime,
             Err(_) => return None,
         };
 
-        // Steps 3-5.
-        // FIXME(nox): Implement the checks.
+        if let Ok(gecko_media) = GeckoMedia::get() {
+            if gecko_media.is_type_supported(input) {
+                return Some(_mime);
+            }
+        }
 
-        // Step 6.
-        // FIXME(nox): Should be Ok(mime).
         None
     }
 
     pub fn set_ready_state(&self, ready_state: ReadyState) {
-        self.ready_state.set(ready_state);
+        // https://w3c.github.io/media-source/#mediasource-events
+        let old_state = self.attributes.ready_state.get();
+        self.attributes.ready_state.set(ready_state);
+
+        let event =
+            if ready_state == ReadyState::Open && (old_state == ReadyState::Closed || old_state == ReadyState::Ended) {
+                if old_state == ReadyState::Ended {
+                    // Notify reader that more data may come.
+                    self.gecko_media.decoder_ended(false);
+                }
+
+                // readyState transitions from "closed" to "open" or from "ended" to "open".
+                atom!("sourceopen")
+            } else if ready_state == ReadyState::Ended && old_state == ReadyState::Open {
+                // readyState transitions from "open" to "ended".
+                atom!("sourceended")
+            } else if ready_state == ReadyState::Closed &&
+                       (old_state == ReadyState::Open || old_state == ReadyState::Ended)
+            {
+                // readyState transitions from "open" to "closed" or "ended" to "closed".
+                atom!("sourceclose")
+            } else {
+                unreachable!("Invalid MediaSource readyState transition");
+            };
+
+        let window = DomRoot::downcast::<Window>(self.global()).unwrap();
+
+        window.dom_manipulation_task_source().queue_simple_event(
+            self.upcast(),
+            event,
+            &window,
+        );
     }
 }
 
@@ -93,39 +266,43 @@ impl MediaSource {
     }
 
     /// https://w3c.github.io/media-source/#dom-mediasource-istypesupported
-    pub fn IsTypeSupported(_window: &Window, type_: DOMString) -> bool {
-        Self::parse_mime_type(&type_).is_some()
+    pub fn IsTypeSupported(_: &Window, type_: DOMString) -> bool {
+        if let Ok(gecko_media) = GeckoMedia::get() {
+            gecko_media.is_type_supported(&type_)
+        } else {
+            false
+        }
     }
 }
 
 impl MediaSourceMethods for MediaSource {
     /// https://w3c.github.io/media-source/#dom-mediasource-sourcebuffers
     fn SourceBuffers(&self) -> DomRoot<SourceBufferList> {
-        self.source_buffers_list.or_init(|| {
+        self.attributes.source_buffers_list.or_init(|| {
             SourceBufferList::new(self, ListMode::All)
         })
     }
 
     /// https://w3c.github.io/media-source/#dom-mediasource-sourcebuffers
     fn ActiveSourceBuffers(&self) -> DomRoot<SourceBufferList> {
-        self.active_source_buffers_list.or_init(|| {
+        self.attributes.active_source_buffers_list.or_init(|| {
             SourceBufferList::new(self, ListMode::Active)
         })
     }
 
     /// https://w3c.github.io/media-source/#dom-readystate
     fn ReadyState(&self) -> ReadyState {
-        self.ready_state.get()
+        self.attributes.ready_state.get()
     }
 
     /// https://w3c.github.io/media-source/#dom-mediasource-duration
     fn Duration(&self) -> f64 {
         // Step 1.
-        if self.ready_state.get() == ReadyState::Closed {
+        if self.attributes.ready_state.get() == ReadyState::Closed {
             return f64::NAN;
         }
         // Step 2.
-        self.duration.get()
+        self.attributes.duration.get()
     }
 
     /// https://w3c.github.io/media-source/#dom-mediasource-duration
@@ -139,17 +316,20 @@ impl MediaSourceMethods for MediaSource {
         }
 
         // Step 2.
-        if self.ready_state.get() != ReadyState::Open {
+        if self.attributes.ready_state.get() != ReadyState::Open {
             return Err(Error::InvalidState);
         }
 
         // Step 3.
-        if self.source_buffers().iter().any(|buffer| buffer.is_active()) {
+        if self.source_buffers().iter().any(
+            |buffer| buffer.is_active(),
+        )
+        {
             return Err(Error::InvalidState);
         }
 
         // Step 4.
-        self.change_duration(value)
+        self.duration_change(value)
     }
 
     event_handler!(sourceopen, GetOnsourceopen, SetOnsourceopen);
@@ -165,31 +345,24 @@ impl MediaSourceMethods for MediaSource {
 
         // Step 2.
         let mime = Self::parse_mime_type(&type_).ok_or(Error::NotSupported)?;
-        if self.is_compatible_with_other_source_buffers(&mime) {
-            return Err(Error::NotSupported);
-        }
 
         // Step 3.
-        // FIXME(nox): Implement quota checks.
-
-        // Step 4.
-        if self.ready_state.get() != ReadyState::Open {
-            return Err(Error::InvalidState);
+        if self.attributes.source_buffers.borrow().len() >= MAX_SOURCE_BUFFERS {
+            return Err(Error::QuotaExceeded);
         }
 
-        let window = DomRoot::downcast::<Window>(self.global()).unwrap();
+        // Step 4.
+        if self.attributes.ready_state.get() != ReadyState::Open {
+            return Err(Error::InvalidState);
+        }
 
         // Steps 5-7.
         let source_buffer = SourceBuffer::new(self, mime);
 
         // Step 8.
-        self.source_buffers.borrow_mut().push(Dom::from_ref(&*source_buffer));
-        // TODO(nox): If we do our own `Runnable`, we could avoid creating
-        // the `sourceBuffers` object if the user doesn't access it.
-        window.dom_manipulation_task_source().queue_simple_event(
-            self.SourceBuffers().upcast(),
-            atom!("addsourcebuffer"),
-            &window,
+        self.append_source_buffer(
+            &source_buffer,
+            true, /* trigger addsourcebuffer event */
         );
 
         // Step 9.
@@ -214,18 +387,10 @@ impl MediaSourceMethods for MediaSource {
             // and set the source buffer's updating flag to false.
 
             // Step 2.3.
-            task_source.queue_simple_event(
-                source_buffer.upcast(),
-                atom!("abort"),
-                &window,
-            );
+            task_source.queue_simple_event(source_buffer.upcast(), atom!("abort"), &window);
 
             // Step 2.4.
-            task_source.queue_simple_event(
-                source_buffer.upcast(),
-                atom!("updateend"),
-                &window,
-            );
+            task_source.queue_simple_event(source_buffer.upcast(), atom!("updateend"), &window);
         }
 
         // Steps 3-4.
@@ -250,7 +415,7 @@ impl MediaSourceMethods for MediaSource {
         }
 
         // Step 10.
-        self.source_buffers.borrow_mut().remove(position);
+        self.attributes.source_buffers.borrow_mut().remove(position);
         source_buffer.clear_parent_media_source();
         // TODO(nox): If we do our own `Runnable`, we could avoid creating
         // the `sourceBuffers` object if the user doesn't access it.
@@ -269,29 +434,28 @@ impl MediaSourceMethods for MediaSource {
     /// https://w3c.github.io/media-source/#dom-mediasource-endofstream
     fn EndOfStream(&self, error: Option<EndOfStreamError>) -> ErrorResult {
         // Step 1.
-        if self.ready_state.get() != ReadyState::Open {
+        if self.attributes.ready_state.get() != ReadyState::Open {
             return Err(Error::InvalidState);
         }
 
         // Step 2.
-        if self.source_buffers.borrow().iter().any(|buffer| buffer.Updating()) {
+        if self.attributes.source_buffers.borrow().iter().any(
+            |buffer| {
+                buffer.Updating()
+            },
+        )
+        {
             return Err(Error::InvalidState);
         }
 
         // Step 3.
-        self.end_of_stream(error);
-
-        Ok(())
+        self.end_of_stream(error)
     }
 
-    /// https://w3c.github.io/media-source/#dom-mediasource-endofstream
-    fn SetLiveSeekableRange(
-        &self,
-        start: Finite<f64>,
-        end: Finite<f64>,
-    ) -> ErrorResult {
+    /// https://w3c.github.io/media-source/#dom-mediasource-setliveseekablerange
+    fn SetLiveSeekableRange(&self, start: Finite<f64>, end: Finite<f64>) -> ErrorResult {
         // Step 1.
-        if self.ready_state.get() != ReadyState::Open {
+        if self.attributes.ready_state.get() != ReadyState::Open {
             return Err(Error::InvalidState);
         }
 
@@ -300,14 +464,19 @@ impl MediaSourceMethods for MediaSource {
             return Err(Error::Type("start should not be negative".to_owned()));
         }
         if *start > *end {
-            return Err(Error::Type("start should not be greater than end".to_owned()));
+            return Err(Error::Type(
+                "start should not be greater than end".to_owned(),
+            ));
         }
 
         // Step 3.
-        self.live_seekable_range.set(Some(&TimeRanges::new(
-            self.global().as_window(),
-            vec![start..end]
-        )));
+        self.attributes.live_seekable_range.set(
+            Some(&TimeRanges::new(
+                self.global()
+                    .as_window(),
+                vec![start..end],
+            )),
+        );
 
         Ok(())
     }
@@ -316,17 +485,20 @@ impl MediaSourceMethods for MediaSource {
     /// https://w3c.github.io/media-source/#dom-mediasource-endofstream
     fn ClearLiveSeekableRange(&self) -> ErrorResult {
         // Step 1.
-        if self.ready_state.get() != ReadyState::Open {
+        if self.attributes.ready_state.get() != ReadyState::Open {
             return Err(Error::InvalidState);
         }
 
         // Step 2.
-        if let Some(time_ranges) = self.live_seekable_range.get() {
+        if let Some(time_ranges) = self.attributes.live_seekable_range.get() {
             if !time_ranges.ranges().is_empty() {
-                self.live_seekable_range.set(Some(&TimeRanges::new(
-                    self.global().as_window(),
-                    vec![],
-                )));
+                self.attributes.live_seekable_range.set(
+                    Some(&TimeRanges::new(
+                        self.global()
+                            .as_window(),
+                        vec![],
+                    )),
+                );
             }
         }
 
@@ -336,9 +508,9 @@ impl MediaSourceMethods for MediaSource {
 
 impl MediaSource {
     /// https://w3c.github.io/media-source/#duration-change-algorithm
-    fn change_duration(&self, new_duration: f64) -> ErrorResult {
+    fn duration_change(&self, new_duration: f64) -> ErrorResult {
         // Step 1.
-        if self.duration.get() == new_duration {
+        if self.attributes.duration.get() == new_duration {
             return Ok(());
         }
 
@@ -354,36 +526,32 @@ impl MediaSource {
         let new_duration = new_duration.max(highest_end_time);
 
         // Step 5.
-        self.duration.set(new_duration);
+        self.attributes.duration.set(new_duration);
 
         // Step 6.
-        // FIXME(nox): Update media duration and run the `HTMLMediaElement`
-        // duration change algorithm.
+        self.gecko_media.duration_change(new_duration);
 
         Ok(())
     }
 
     /// https://w3c.github.io/media-source/#end-of-stream-algorithm
-    fn end_of_stream(&self, _error: Option<EndOfStreamError>) {
-        // Step 1.
-        self.ready_state.set(ReadyState::Closed);
-
-        let window = DomRoot::downcast::<Window>(self.global()).unwrap();
-
-        // Step 2.
-        window.dom_manipulation_task_source().queue_simple_event(
-            self.upcast(),
-            atom!("sourceended"),
-            &window,
-        );
+    pub fn end_of_stream(&self, error: Option<EndOfStreamError>) -> ErrorResult {
+        // Step 1 and step 2.
+        self.set_ready_state(ReadyState::Ended);
 
         // Step 3.
-        // FIXME(nox): Do the thing.
-    }
+        match error {
+            Some(error) => {
+                self.gecko_media.end_of_stream_error(error.into());
+            },
+            None => {
+                let _ = self.duration_change(self.highest_end_time())?;
+                // Notify reader that all data is now available.
+                self.gecko_media.decoder_ended(true);
+            },
+        }
 
-    fn is_compatible_with_other_source_buffers(&self, _mime: &Mime) -> bool {
-        // FIXME(nox): Implement the checks.
-        false
+        Ok(())
     }
 
     fn is_less_than_highest_presentation_time(&self, _value: f64) -> bool {
@@ -394,5 +562,35 @@ impl MediaSource {
     fn highest_end_time(&self) -> f64 {
         // FIXME(nox): Implement correctly.
         unimplemented!();
+    }
+}
+
+impl From<ReadyState> for i32 {
+    fn from(ready_state: ReadyState) -> Self {
+        match ready_state {
+            ReadyState::Closed => 0,
+            ReadyState::Open => 1,
+            ReadyState::Ended => 2,
+        }
+    }
+}
+
+impl From<i32> for ReadyState {
+    fn from(ready_state: i32) -> Self {
+        match ready_state {
+            0 => ReadyState::Closed,
+            1 => ReadyState::Open,
+            2 => ReadyState::Ended,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl From<EndOfStreamError> for i32 {
+    fn from(error: EndOfStreamError) -> Self {
+        match error {
+            EndOfStreamError::Network => 0,
+            EndOfStreamError::Decode => 1,
+        }
     }
 }
