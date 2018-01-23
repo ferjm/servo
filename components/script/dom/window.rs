@@ -288,7 +288,8 @@ pub struct Window {
 
     /// Flag to identify whether mutation observers are present(true)/absent(false)
     exists_mut_observer: Cell<bool>,
-    #[ignore_heap_size_of = "trait objects are hard"]
+    
+    #[ignore_malloc_size_of = "trait objects are hard"]
     webrender_api_sender: webrender_api::RenderApiSender,
 }
 

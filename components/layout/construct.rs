@@ -409,7 +409,7 @@ impl<'a, ConcreteThreadSafeLayoutNode: ThreadSafeLayoutNode>
             }
             Some(LayoutNodeType::Element(LayoutElementType::HTMLMediaElement)) => {
                 let data = node.media_data().unwrap();
-                SpecificFragmentInfo::Media(box MediaFragmentInfo::new(data))
+                SpecificFragmentInfo::Media(Box::new(MediaFragmentInfo::new(data)))
             }
             _ => {
                 // This includes pseudo-elements.
