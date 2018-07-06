@@ -6,7 +6,7 @@ use dom::baseaudiocontext::BaseAudioContext;
 use dom::bindings::codegen::Bindings::AudioNodeBinding::{AudioNodeMethods, AudioNodeOptions};
 use dom::bindings::codegen::Bindings::AudioNodeBinding::{ChannelCountMode, ChannelInterpretation};
 use dom::bindings::error::{Error, ErrorResult, Fallible};
-use dom::bindings::root::DomRoot;
+use dom::bindings::root::{Dom, DomRoot};
 use dom::audioparam::AudioParam;
 use dom::eventtarget::EventTarget;
 use dom_struct::dom_struct;
@@ -24,7 +24,7 @@ pub struct AudioNode {
     eventtarget: EventTarget,
     #[ignore_malloc_size_of = "servo_media"]
     node_id: NodeId,
-    context: DomRoot<BaseAudioContext>,
+    context: Dom<BaseAudioContext>,
     number_of_inputs: u32,
     number_of_outputs: u32,
     channel_count: Cell<u32>,
@@ -45,7 +45,7 @@ impl AudioNode {
         AudioNode {
             eventtarget: EventTarget::new_inherited(),
             node_id,
-            context: DomRoot::from_ref(context),
+            context: Dom::from_ref(context),
             number_of_inputs,
             number_of_outputs,
             channel_count: Cell::new(options.channelCount.unwrap_or(2)),
