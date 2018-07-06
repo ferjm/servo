@@ -96,31 +96,36 @@ impl AudioNodeMethods for AudioNode {
 
     // https://webaudio.github.io/web-audio-api/#dom-audionode-disconnect
     fn Disconnect(&self) -> ErrorResult {
-        // TODO
+        self.context.audio_context_impl()
+            .disconnect_all_from(self.node_id());
         Ok(())
     }
 
-    // https://webaudio.github.io/web-audio-api/#dom-audionode-disconnect
-    fn Disconnect_(&self, _: u32) -> ErrorResult {
-        // TODO
+    // https://webaudio.github.io/web-audio-api/#dom-audionode-disconnect-output
+    fn Disconnect_(&self, out: u32) -> ErrorResult {
+        self.context.audio_context_impl()
+            .disconnect_output(self.node_id().output(out));
         Ok(())
     }
 
-    // https://webaudio.github.io/web-audio-api/#dom-audionode-disconnect
-    fn Disconnect__(&self, _: &AudioNode) -> ErrorResult {
-        // TODO
+    // https://webaudio.github.io/web-audio-api/#dom-audionode-disconnect-destinationnode
+    fn Disconnect__(&self, to: &AudioNode) -> ErrorResult {
+        self.context.audio_context_impl()
+            .disconnect_between(self.node_id(), to.node_id());
         Ok(())
     }
 
-    // https://webaudio.github.io/web-audio-api/#dom-audionode-disconnect
-    fn Disconnect___(&self, _: &AudioNode, _: u32) -> ErrorResult{
-        // TODO
+    // https://webaudio.github.io/web-audio-api/#dom-audionode-disconnect-destinationnode-output
+    fn Disconnect___(&self, to: &AudioNode, out: u32) -> ErrorResult{
+        self.context.audio_context_impl()
+            .disconnect_output_between(self.node_id().output(out), to.node_id());
         Ok(())
     }
 
-    // https://webaudio.github.io/web-audio-api/#dom-audionode-disconnect
-    fn Disconnect____(&self, _: &AudioNode, _: u32, _: u32) -> ErrorResult {
-        // TODO
+    // https://webaudio.github.io/web-audio-api/#dom-audionode-disconnect-destinationnode-output-input
+    fn Disconnect____(&self, to: &AudioNode, out: u32, inp: u32) -> ErrorResult {
+        self.context.audio_context_impl()
+            .disconnect_output_between_to(self.node_id().output(out), to.node_id().input(inp));
         Ok(())
     }
 
