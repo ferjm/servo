@@ -17,7 +17,7 @@ use dom::window::Window;
 use dom_struct::dom_struct;
 use servo_media::audio::context::AudioContext;
 use servo_media::audio::graph::NodeId;
-use servo_media::audio::node::{AudioNodeMessage, AudioNodeType};
+use servo_media::audio::node::{AudioNodeMessage, AudioNodeInit};
 use servo_media::audio::oscillator_node::OscillatorNodeOptions as ServoMediaOscillatorOptions;
 use servo_media::audio::oscillator_node::OscillatorType as ServoMediaOscillatorType;
 use servo_media::audio::oscillator_node::OscillatorNodeMessage;
@@ -48,7 +48,7 @@ impl OscillatorNode {
         node_options.channelCountMode = Some(ChannelCountMode::Max);
         node_options.channelInterpretation = Some(ChannelInterpretation::Speakers);
         let source_node = AudioScheduledSourceNode::new_inherited(
-            AudioNodeType::OscillatorNode(oscillator_options.into()),
+            AudioNodeInit::OscillatorNode(oscillator_options.into()),
             context,
             &node_options,
             0, /* inputs */

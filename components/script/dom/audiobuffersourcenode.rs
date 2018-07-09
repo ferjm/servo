@@ -25,7 +25,7 @@ use servo_media::audio::buffer_source_node::AudioBufferSourceNodeMessage;
 use servo_media::audio::buffer_source_node::AudioBufferSourceNodeOptions;
 use servo_media::audio::context::AudioContext;
 use servo_media::audio::graph::NodeId;
-use servo_media::audio::node::{AudioNodeMessage, AudioNodeType};
+use servo_media::audio::node::{AudioNodeMessage, AudioNodeInit};
 use servo_media::audio::param::{UserAutomationEvent, RampKind};
 use std::cell::Cell;
 use std::f32;
@@ -57,7 +57,7 @@ impl AudioBufferSourceNode {
         node_options.channelCountMode = Some(ChannelCountMode::Max);
         node_options.channelInterpretation = Some(ChannelInterpretation::Speakers);
         let source_node = AudioScheduledSourceNode::new_inherited(
-            AudioNodeType::AudioBufferSourceNode(options.into()),
+            AudioNodeInit::AudioBufferSourceNode(options.into()),
             context,
             &node_options,
             0 /* inputs */,

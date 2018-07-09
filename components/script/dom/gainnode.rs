@@ -17,7 +17,7 @@ use dom_struct::dom_struct;
 use servo_media::audio::context::AudioContext;
 use servo_media::audio::gain_node::{GainNodeMessage, GainNodeOptions};
 use servo_media::audio::graph::NodeId;
-use servo_media::audio::node::{AudioNodeMessage, AudioNodeType};
+use servo_media::audio::node::{AudioNodeMessage, AudioNodeInit};
 use servo_media::audio::param::{UserAutomationEvent, RampKind};
 use std::f32;
 use std::rc::Rc;
@@ -42,7 +42,7 @@ impl GainNode {
         node_options.channelCountMode = Some(ChannelCountMode::Max);
         node_options.channelInterpretation = Some(ChannelInterpretation::Speakers);
         let node = AudioNode::new_inherited(
-            AudioNodeType::GainNode(gain_options.into()),
+            AudioNodeInit::GainNode(gain_options.into()),
             None,
             context,
             &node_options,
