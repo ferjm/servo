@@ -12,7 +12,7 @@ use dom::window::Window;
 use dom_struct::dom_struct;
 use servo_media::audio::graph::NodeId;
 use servo_media::audio::node::AudioNodeMessage;
-use servo_media::audio::param::{ParamType, RampKind, UserAutomationEvent};
+use servo_media::audio::param::{ParamType, ParamRate, RampKind, UserAutomationEvent};
 use std::cell::Cell;
 
 #[dom_struct]
@@ -71,7 +71,10 @@ impl AudioParamMethods for AudioParam {
 
     fn SetAutomationRate(&self, automation_rate: AutomationRate) {
         self.automation_rate.set(automation_rate);
-        // XXX set servo-media param automation rate
+        self.context.audio_context_impl()
+            .message_node(self.node,
+              AudioNodeMessage::SetParamRate(self.param,
+                                             automation_rate.into()));
     }
 
     fn Value(&self) -> Finite<f32> {
@@ -180,5 +183,14 @@ impl AudioParamMethods for AudioParam {
                           )
                          );
         DomRoot::from_ref(self)
+    }
+}
+
+impl From<AutomationRate> for ParamRate {
+    fn from(x: AutomationRate) -> Self {
+        match x {
+            AutomationRate::K_rate => ParamRate::KRate,
+            AutomationRate::A_rate => ParamRate::ARate,
+        }
     }
 }
