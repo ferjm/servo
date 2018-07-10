@@ -69,8 +69,8 @@ impl AudioNodeMethods for AudioNode {
                destination: &AudioNode,
                output: u32,
                input: u32) -> Fallible<DomRoot<AudioNode>> {
-        if *(self.context) != *(destination.Context()) {
-            //XXX return Err(Error::InvalidAccess);
+        if self.context != Dom::from_ref(destination.Context())) {
+            return Err(Error::InvalidAccess);
         }
 
         if output >= self.NumberOfOutputs() ||
