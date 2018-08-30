@@ -42,6 +42,8 @@
               ${include_dependencies()}
             </Component>
 
+            ${include_modules()}
+
             ${include_directory(resources_path, "resources")}
           </Directory>
         </Directory>
@@ -67,6 +69,7 @@
       <ComponentRef Id="${c}"/>
       % endfor
       <ComponentRef Id="ProgramMenuDir"/>
+      ${include_modules_ref()}
     </Feature>
 
     <Icon Id="servo.exe" SourceFile="${windowize(exe_path)}\servo.exe"/>
@@ -94,6 +97,10 @@ def listdirs(directory):
 def listdeps(temp_dir):
     return [path.join(temp_dir, f) for f in os.listdir(temp_dir) if os.path.isfile(path.join(temp_dir, f)) and f != "servo.exe"]
 
+def listmodules(temp_dir):
+    modules_dir = path.join(temp_dir, 'msm')
+    return [path.join(modules_dir, f) for f in os.listdir(modules_dir)]
+
 def windowize(p):
     if not p.startswith("/"):
         return p
@@ -108,6 +115,21 @@ components = []
                     Name="${path.basename(f)}"
                     Source="${f}"
                     DiskId="1"/>
+% endfor
+</%def>
+
+<%def name="include_modules()">
+% for f in listmodules(dir_to_temp):
+        <Merge Id="${make_id(path.basename(f)).replace(".","").replace("+","x")}"
+               Language="1033"
+               SourceFile="${path.join("msm", f)}"
+               DiskId="1"/>
+% endfor
+</%def>
+
+<%def name="include_modules_ref()">
+% for f in listmodules(dir_to_temp):
+        <MergeRef Id="${make_id(path.basename(f)).replace(".","").replace("+","x")}"/>
 % endfor
 </%def>
 

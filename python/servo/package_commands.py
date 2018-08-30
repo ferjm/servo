@@ -11,6 +11,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from datetime import datetime
 import hashlib
+import io
 import json
 import os
 import os.path as path
@@ -18,6 +19,8 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import urllib2
+import zipfile
 
 from mach.decorators import (
     CommandArgument,
@@ -325,6 +328,19 @@ class PackageCommands(CommandBase):
             copy_windows_dependencies(target_dir, dir_to_temp_servo)
 
             change_prefs(dir_to_resources, "windows")
+
+            # Download GStreamer merge modules. Only once.
+            dir_to_gst_deps = path.join(target_dir, 'gstreamer');
+            if not os.path.exists(dir_to_gst_deps):
+                print('Fetching GStreamer dependencies. This may take a while...')
+                resp = urllib2.urlopen('https://gstreamer.freedesktop.org/data/pkg/windows/1.14.2/gstreamer-1.0-x86_64-1.14.2-merge-modules.zip')
+                with zipfile.ZipFile(io.BytesIO(resp.read()), 'r') as zip_ref:
+                    zip_ref.extractall(dir_to_gst_deps)
+
+            # Gather merge modules.
+            dir_to_msm = path.join(dir_to_temp_servo, 'msm')
+            gst_msms = path.join(dir_to_gst_deps, 'MinGW', 'msys', '1.0', 'home', 'Jan', 'cerbero')
+            shutil.copytree(gst_msms, dir_to_msm)
 
             # generate Servo.wxs
             import mako.template
