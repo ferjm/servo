@@ -9,17 +9,20 @@ SRCS = \
     code/src/Servo2D.cpp
 
 LIBPATHS.debug = \
-    ../../../target/aarch64-linux-android/debug
+    ../../../target/aarch64-linux-android/debug \
+    ../../../target/gstreamer/gst-build-arm64-v8a
 
 LIBPATHS.release = \
-    ../../../target/aarch64-linux-android/release
+    ../../../target/aarch64-linux-android/release \
+    ../../../target/gstreamer/gst-build-arm64-v8a
 
 STLIBS = \
     mlservo
 
 SHLIBS = \
     log \
-    z
+    z \
+    gstreamer_android
 
 USES = \
     lumin_runtime \

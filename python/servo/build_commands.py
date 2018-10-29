@@ -139,6 +139,36 @@ def notify(config, title, text):
             extra = getattr(e, "message", "")
             print("[Warning] Could not generate notification! %s" % extra, file=sys.stderr)
 
+def setup_gstreamer(env, base_path, android_lib):
+    # GStreamer and its dependencies use pkg-config and this flag is required
+    # to make it work in a cross-compilation context.
+    env["PKG_CONFIG_ALLOW_CROSS"] = '1'
+    # Build the name of the package containing all GStreamer dependencies
+    # according to the build target.
+    gst_lib = "gst-build-{}".format(android_lib)
+    gst_lib_zip = "gstreamer-{}-1.14.3-20181029-095412.zip".format(android_lib) 
+    gst_dir = os.path.join(base_path, "gstreamer")
+    gst_lib_path = os.path.join(base_path, gst_dir, gst_lib)
+    pkg_config_path = os.path.join(gst_lib_path, "pkgconfig")
+    env["PKG_CONFIG_PATH"] = pkg_config_path
+    if not os.path.exists(gst_lib_path):
+        # Download GStreamer dependencies if they have not already been downloaded
+        print("Downloading GStreamer dependencies")
+        gst_url = "http://servo-deps.s3.amazonaws.com/gstreamer/%s" % gst_lib_zip
+        print(gst_url)
+        urllib.urlretrieve(gst_url, gst_lib_zip)
+        zip_ref = zipfile.ZipFile(gst_lib_zip, "r")
+        zip_ref.extractall(gst_dir)
+        os.remove(gst_lib_zip)
+
+        # Change pkgconfig info to make all GStreamer dependencies point
+        # to the libgstreamer_android.so bundle.
+        for each in os.listdir(pkg_config_path):
+            if each.endswith('.pc'):
+                print("Setting pkgconfig info for %s" % each)
+                pc = os.path.join(pkg_config_path, each)
+                expr = "s#libdir=.*#libdir=%s#g" % gst_lib_path
+                subprocess.call(["perl", "-i", "-pe", expr, pc])
 
 @CommandProvider
 class MachCommands(CommandBase):
@@ -418,36 +448,8 @@ class MachCommands(CommandBase):
             if not os.path.exists(aar_out_dir):
                 os.makedirs(aar_out_dir)
             env["AAR_OUT_DIR"] = aar_out_dir
-            # GStreamer and its dependencies use pkg-config and this flag is required
-            # to make it work in a cross-compilation context.
-            env["PKG_CONFIG_ALLOW_CROSS"] = '1'
-            # Build the name of the package containing all GStreamer dependencies
-            # according to the build target.
-            gst_lib = "gst-build-{}".format(self.config["android"]["lib"])
-            gst_lib_zip = "%s.zip" % gst_lib
-            gst_dir = os.path.join(base_path, "gstreamer")
-            gst_lib_path = os.path.join(base_path, gst_dir, gst_lib)
-            pkg_config_path = os.path.join(gst_lib_path, "pkgconfig")
-            env["PKG_CONFIG_PATH"] = pkg_config_path
-            if not os.path.exists(gst_lib_path):
-                # Download GStreamer dependencies if they have not already been downloaded
-                print("Downloading GStreamer dependencies")
-                gst_url = "https://github.com/servo/libgstreamer_android_gen/blob/" \
-                    "ebb0f0097fec985e0cef988c54a28c2ba06761aa/out/%s?raw=true" % gst_lib_zip
-                print(gst_url)
-                urllib.urlretrieve(gst_url, gst_lib_zip)
-                zip_ref = zipfile.ZipFile(gst_lib_zip, "r")
-                zip_ref.extractall(gst_dir)
-                os.remove(gst_lib_zip)
 
-                # Change pkgconfig info to make all GStreamer dependencies point
-                # to the libgstreamer_android.so bundle.
-                for each in os.listdir(pkg_config_path):
-                    if each.endswith('.pc'):
-                        print("Setting pkgconfig info for %s" % each)
-                        pc = os.path.join(pkg_config_path, each)
-                        expr = "s#libdir=.*#libdir=%s#g" % gst_lib_path
-                        subprocess.call(["perl", "-i", "-pe", expr, pc])
+            setup_gstreamer(env, base_path, self.config["android"]["lib"])
 
         if magicleap:
             if platform.system() not in ["Darwin"]:
@@ -531,6 +533,8 @@ class MachCommands(CommandBase):
             status = call(path.join(ml_support, "openssl.sh"), env=env, verbose=verbose)
             if status:
                 return status
+
+            setup_gstreamer(env, base_path, "arm64-v8a")
 
         if very_verbose:
             print (["Calling", "cargo", "build"] + opts)
