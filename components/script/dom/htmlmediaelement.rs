@@ -178,6 +178,8 @@ pub struct HTMLMediaElement {
     seeking: Cell<bool>,
     /// URL of the media resource, if any.
     resource_url: DomRefCell<Option<ServoUrl>>,
+    /// https://html.spec.whatwg.org/multipage/#dom-media-played
+    played: Option<TimeRanges>,
 }
 
 /// <https://html.spec.whatwg.org/multipage/#dom-media-networkstate>
@@ -229,6 +231,7 @@ impl HTMLMediaElement {
             default_playback_start_position: Cell::new(0.),
             seeking: Cell::new(false),
             resource_url: DomRefCell::new(None),
+            played: None,
         }
     }
 
