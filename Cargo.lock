@@ -3519,8 +3519,8 @@ dependencies = [
  "serde 1.0.80 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_bytes 0.10.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.13 (registry+https://github.com/rust-lang/crates.io-index)",
- "servo-media 0.1.0 (git+https://github.com/servo/media)",
- "servo-media-auto 0.1.0 (git+https://github.com/servo/media)",
+ "servo-media 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)",
+ "servo-media-auto 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)",
  "servo_allocator 0.0.1",
  "servo_arc 0.1.1",
  "servo_atoms 0.0.1",
@@ -3764,18 +3764,18 @@ dependencies = [
 [[package]]
 name = "servo-media"
 version = "0.1.0"
-source = "git+https://github.com/servo/media#a5a8490087d786a4dbebed43e9705874c4351aa0"
+source = "git+https://github.com/ferjm/media?branch=streams.registry#fd121de8390c759dec3998ebf7f63aa4a9f8106e"
 dependencies = [
- "servo-media-audio 0.1.0 (git+https://github.com/servo/media)",
- "servo-media-player 0.1.0 (git+https://github.com/servo/media)",
- "servo-media-streams 0.1.0 (git+https://github.com/servo/media)",
- "servo-media-webrtc 0.1.0 (git+https://github.com/servo/media)",
+ "servo-media-audio 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)",
+ "servo-media-player 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)",
+ "servo-media-streams 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)",
+ "servo-media-webrtc 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)",
 ]
 
 [[package]]
 name = "servo-media-audio"
 version = "0.1.0"
-source = "git+https://github.com/servo/media#a5a8490087d786a4dbebed43e9705874c4351aa0"
+source = "git+https://github.com/ferjm/media?branch=streams.registry#fd121de8390c759dec3998ebf7f63aa4a9f8106e"
 dependencies = [
  "boxfnonce 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "byte-slice-cast 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3784,37 +3784,37 @@ dependencies = [
  "petgraph 0.4.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.80 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.80 (registry+https://github.com/rust-lang/crates.io-index)",
- "servo_media_derive 0.1.0 (git+https://github.com/servo/media)",
+ "servo_media_derive 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)",
  "smallvec 0.6.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "servo-media-auto"
 version = "0.1.0"
-source = "git+https://github.com/servo/media#a5a8490087d786a4dbebed43e9705874c4351aa0"
+source = "git+https://github.com/ferjm/media?branch=streams.registry#fd121de8390c759dec3998ebf7f63aa4a9f8106e"
 dependencies = [
- "servo-media-dummy 0.1.0 (git+https://github.com/servo/media)",
- "servo-media-gstreamer 0.1.0 (git+https://github.com/servo/media)",
+ "servo-media-dummy 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)",
+ "servo-media-gstreamer 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)",
 ]
 
 [[package]]
 name = "servo-media-dummy"
 version = "0.1.0"
-source = "git+https://github.com/servo/media#a5a8490087d786a4dbebed43e9705874c4351aa0"
+source = "git+https://github.com/ferjm/media?branch=streams.registry#fd121de8390c759dec3998ebf7f63aa4a9f8106e"
 dependencies = [
  "boxfnonce 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ipc-channel 0.11.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "servo-media 0.1.0 (git+https://github.com/servo/media)",
- "servo-media-audio 0.1.0 (git+https://github.com/servo/media)",
- "servo-media-player 0.1.0 (git+https://github.com/servo/media)",
- "servo-media-streams 0.1.0 (git+https://github.com/servo/media)",
- "servo-media-webrtc 0.1.0 (git+https://github.com/servo/media)",
+ "servo-media 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)",
+ "servo-media-audio 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)",
+ "servo-media-player 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)",
+ "servo-media-streams 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)",
+ "servo-media-webrtc 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)",
 ]
 
 [[package]]
 name = "servo-media-gstreamer"
 version = "0.1.0"
-source = "git+https://github.com/servo/media#a5a8490087d786a4dbebed43e9705874c4351aa0"
+source = "git+https://github.com/ferjm/media?branch=streams.registry#fd121de8390c759dec3998ebf7f63aa4a9f8106e"
 dependencies = [
  "boxfnonce 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "byte-slice-cast 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3833,11 +3833,11 @@ dependencies = [
  "ipc-channel 0.11.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "servo-media 0.1.0 (git+https://github.com/servo/media)",
- "servo-media-audio 0.1.0 (git+https://github.com/servo/media)",
- "servo-media-player 0.1.0 (git+https://github.com/servo/media)",
- "servo-media-streams 0.1.0 (git+https://github.com/servo/media)",
- "servo-media-webrtc 0.1.0 (git+https://github.com/servo/media)",
+ "servo-media 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)",
+ "servo-media-audio 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)",
+ "servo-media-player 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)",
+ "servo-media-streams 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)",
+ "servo-media-webrtc 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)",
  "url 1.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "zip 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -3845,26 +3845,30 @@ dependencies = [
 [[package]]
 name = "servo-media-player"
 version = "0.1.0"
-source = "git+https://github.com/servo/media#a5a8490087d786a4dbebed43e9705874c4351aa0"
+source = "git+https://github.com/ferjm/media?branch=streams.registry#fd121de8390c759dec3998ebf7f63aa4a9f8106e"
 dependencies = [
  "ipc-channel 0.11.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.80 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.80 (registry+https://github.com/rust-lang/crates.io-index)",
+ "servo-media-streams 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)",
 ]
 
 [[package]]
 name = "servo-media-streams"
 version = "0.1.0"
-source = "git+https://github.com/servo/media#a5a8490087d786a4dbebed43e9705874c4351aa0"
+source = "git+https://github.com/ferjm/media?branch=streams.registry#fd121de8390c759dec3998ebf7f63aa4a9f8106e"
+dependencies = [
+ "uuid 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "servo-media-webrtc"
 version = "0.1.0"
-source = "git+https://github.com/servo/media#a5a8490087d786a4dbebed43e9705874c4351aa0"
+source = "git+https://github.com/ferjm/media?branch=streams.registry#fd121de8390c759dec3998ebf7f63aa4a9f8106e"
 dependencies = [
  "boxfnonce 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "servo-media-streams 0.1.0 (git+https://github.com/servo/media)",
+ "servo-media-streams 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)",
 ]
 
 [[package]]
@@ -3959,7 +3963,7 @@ dependencies = [
 [[package]]
 name = "servo_media_derive"
 version = "0.1.0"
-source = "git+https://github.com/servo/media#a5a8490087d786a4dbebed43e9705874c4351aa0"
+source = "git+https://github.com/ferjm/media?branch=streams.registry#fd121de8390c759dec3998ebf7f63aa4a9f8106e"
 dependencies = [
  "proc-macro2 0.4.26 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 0.6.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4739,6 +4743,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "uuid"
+version = "0.6.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "cfg-if 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "uuid"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
@@ -5489,16 +5502,16 @@ dependencies = [
 "checksum servo-fontconfig 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "93f799b649b4a2bf362398910eca35240704c7e765e780349b2bb1070d892262"
 "checksum servo-fontconfig-sys 4.0.7 (registry+https://github.com/rust-lang/crates.io-index)" = "b46d201addcfbd25c1798ad1281d98c40743824e0b0f1e611bd3d5d0d31a7b8d"
 "checksum servo-freetype-sys 4.0.4 (registry+https://github.com/rust-lang/crates.io-index)" = "5d00ab791f66cd2ec58e72c91b6076cee20fac560463aa871404eb31dfc9c4ff"
-"checksum servo-media 0.1.0 (git+https://github.com/servo/media)" = "<none>"
-"checksum servo-media-audio 0.1.0 (git+https://github.com/servo/media)" = "<none>"
-"checksum servo-media-auto 0.1.0 (git+https://github.com/servo/media)" = "<none>"
-"checksum servo-media-dummy 0.1.0 (git+https://github.com/servo/media)" = "<none>"
-"checksum servo-media-gstreamer 0.1.0 (git+https://github.com/servo/media)" = "<none>"
-"checksum servo-media-player 0.1.0 (git+https://github.com/servo/media)" = "<none>"
-"checksum servo-media-streams 0.1.0 (git+https://github.com/servo/media)" = "<none>"
-"checksum servo-media-webrtc 0.1.0 (git+https://github.com/servo/media)" = "<none>"
+"checksum servo-media 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)" = "<none>"
+"checksum servo-media-audio 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)" = "<none>"
+"checksum servo-media-auto 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)" = "<none>"
+"checksum servo-media-dummy 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)" = "<none>"
+"checksum servo-media-gstreamer 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)" = "<none>"
+"checksum servo-media-player 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)" = "<none>"
+"checksum servo-media-streams 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)" = "<none>"
+"checksum servo-media-webrtc 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)" = "<none>"
 "checksum servo-skia 0.30000020.1 (registry+https://github.com/rust-lang/crates.io-index)" = "63abd6bed50aaf0e348d9fe8104088d61d5b67fd47cbbdc822278f5bed82b5f5"
-"checksum servo_media_derive 0.1.0 (git+https://github.com/servo/media)" = "<none>"
+"checksum servo_media_derive 0.1.0 (git+https://github.com/ferjm/media?branch=streams.registry)" = "<none>"
 "checksum sha-1 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "51b9d1f3b5de8a167ab06834a7c883bd197f2191e1dda1a22d9ccfeedbf9aded"
 "checksum sha1 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "2579985fda508104f7587689507983eadd6a6e84dd35d6d115361f530916fa0d"
 "checksum sha2 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "7b4d8bfd0e469f417657573d8451fb33d16cfe0989359b93baf3a1ffc639543d"
@@ -5566,6 +5579,7 @@ dependencies = [
 "checksum url_serde 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "74e7d099f1ee52f823d4bdd60c93c3602043c728f5db3b97bdb548467f7bddea"
 "checksum utf-8 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)" = "b6f923c601c7ac48ef1d66f7d5b5b2d9a7ba9c51333ab75a3ddf8d0309185a56"
 "checksum utf8-ranges 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "796f7e48bef87609f7ade7e06495a87d5cd06c7866e6a5cbfceffc558a243737"
+"checksum uuid 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)" = "e1436e58182935dcd9ce0add9ea0b558e8a87befe01c1a301e6020aeb0876363"
 "checksum uuid 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)" = "dab5c5526c5caa3d106653401a267fed923e7046f35895ffcb5ca42db64942e6"
 "checksum vcpkg 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "9e0a7d8bed3178a8fb112199d466eeca9ed09a14ba8ad67718179b4fd5487d0b"
 "checksum vec_map 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "887b5b631c2ad01628bbbaa7dd4c869f80d3186688f8d0b6f58774fbe324988c"
