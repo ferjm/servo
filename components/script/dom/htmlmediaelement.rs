@@ -1204,11 +1204,8 @@ impl HTMLMediaElement {
             _ => StreamType::Seekable,
         };
 
-        let player = ServoMedia::get().unwrap().create_player(stream_type);
-
         let (action_sender, action_receiver) = ipc::channel().unwrap();
-        player.register_event_handler(action_sender);
-        player.register_frame_renderer(self.frame_renderer.clone());
+        let player = ServoMedia::get().unwrap().create_player(stream_type, action_sender, self.frame_renderer.clone()).map_err(|_| ())?;
 
         *self.player.borrow_mut() = Some(player);
 
