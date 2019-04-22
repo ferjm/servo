@@ -52,7 +52,7 @@ use crate::dom::htmlformelement::FormControlElementHelpers;
 use crate::dom::htmlhrelement::{HTMLHRElement, HTMLHRLayoutHelpers};
 use crate::dom::htmliframeelement::{HTMLIFrameElement, HTMLIFrameElementLayoutMethods};
 use crate::dom::htmlimageelement::{HTMLImageElement, LayoutHTMLImageElementHelpers};
-use crate::dom::htmlinputelement::{HTMLInputElement, LayoutHTMLInputElementHelpers};
+use crate::dom::htmlinputelement::{HTMLInputElement, InputType, LayoutHTMLInputElementHelpers};
 use crate::dom::htmllabelelement::HTMLLabelElement;
 use crate::dom::htmllegendelement::HTMLLegendElement;
 use crate::dom::htmllinkelement::HTMLLinkElement;
@@ -436,6 +436,14 @@ impl Element {
                 box_.clone_overflow_y() == overflow_y::computed_value::T::Hidden
         })
     }
+
+    /// Return whether this element is an input of range type.
+    fn is_input_type_range(&self) -> bool {
+        if let Some(input) = self.downcast::<HTMLInputElement>() {
+            return input.input_type() == InputType::Range;
+        }
+        false
+    }
 }
 
 #[allow(unsafe_code)]
@@ -534,6 +542,7 @@ pub trait LayoutElementHelpers {
     fn get_state_for_layout(&self) -> ElementState;
     fn insert_selector_flags(&self, flags: ElementSelectorFlags);
     fn has_selector_flags(&self, flags: ElementSelectorFlags) -> bool;
+    fn is_input_type_range(&self) -> bool;
 }
 
 impl LayoutElementHelpers for LayoutDom<Element> {
@@ -995,6 +1004,12 @@ impl LayoutElementHelpers for LayoutDom<Element> {
     #[allow(unsafe_code)]
     fn has_selector_flags(&self, flags: ElementSelectorFlags) -> bool {
         unsafe { (*self.unsafe_get()).selector_flags.get().contains(flags) }
+    }
+
+    #[inline]
+    #[allow(unsafe_code)]
+    fn is_input_type_range(&self) -> bool {
+        unsafe { (*self.unsafe_get()).is_input_type_range() }
     }
 }
 

@@ -1886,6 +1886,15 @@ impl Fragment {
 
                 state.add_image_item(base, display_item);
             },
+            SpecificFragmentInfo::InputRange(ref input_range_fragment_info) => {
+                let base = create_base_display_item(state);
+                state.add_display_item(DisplayItem::Rectangle(CommonDisplayItem::new(
+                    base,
+                    webrender_api::RectangleDisplayItem {
+                        color: ColorU::new(255, 0, 0, 0).into(),
+                    },
+                )));
+            },
             SpecificFragmentInfo::UnscannedText(_) => {
                 panic!("Shouldn't see unscanned fragments here.")
             },

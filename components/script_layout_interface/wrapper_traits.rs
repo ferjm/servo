@@ -307,6 +307,14 @@ pub trait ThreadSafeLayoutNode:
         let id = combine_id_with_fragment_type(self.opaque().id(), self.fragment_type());
         ExternalScrollId(id as u64, pipeline_id.to_webrender())
     }
+
+    #[inline]
+    fn is_input_type_range(&self) -> bool {
+        if let Some(element) = self.as_element() {
+            return element.is_input_type_range();
+        }
+        false
+    }
 }
 
 // This trait is only public so that it can be implemented by the gecko wrapper.
@@ -487,4 +495,7 @@ pub trait ThreadSafeLayoutElement:
                 .clone(),
         }
     }
+
+    #[inline]
+    fn is_input_type_range(&self) -> bool;
 }

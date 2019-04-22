@@ -27,10 +27,10 @@ use crate::fragment::{
     ImageFragmentInfo, InlineAbsoluteFragmentInfo, InlineAbsoluteHypotheticalFragmentInfo,
 };
 use crate::fragment::{
-    InlineBlockFragmentInfo, MediaFragmentInfo, SpecificFragmentInfo, SvgFragmentInfo,
+    InlineBlockFragmentInfo, InputRangeFragmentInfo, MediaFragmentInfo, SpecificFragmentInfo,
 };
 use crate::fragment::{
-    TableColumnFragmentInfo, UnscannedTextFragmentInfo, WhitespaceStrippingResult,
+    SvgFragmentInfo, TableColumnFragmentInfo, UnscannedTextFragmentInfo, WhitespaceStrippingResult,
 };
 use crate::inline::{InlineFlow, InlineFragmentNodeFlags, InlineFragmentNodeInfo};
 use crate::linked_list::prepend_from;
@@ -457,6 +457,11 @@ impl<'a, ConcreteThreadSafeLayoutNode: ThreadSafeLayoutNode>
                 let data = node.svg_data().unwrap();
                 SpecificFragmentInfo::Svg(Box::new(SvgFragmentInfo::new(data)))
             },
+            Some(LayoutNodeType::Element(LayoutElementType::HTMLInputElement))
+                if node.is_input_type_range() =>
+            {
+                SpecificFragmentInfo::InputRange(InputRangeFragmentInfo::new(0.))
+            },
             _ => {
                 // This includes pseudo-elements.
                 SpecificFragmentInfo::Generic
@@ -772,8 +777,9 @@ impl<'a, ConcreteThreadSafeLayoutNode: ThreadSafeLayoutNode>
         node: &ConcreteThreadSafeLayoutNode,
     ) -> ConstructionResult {
         let mut fragments = IntermediateInlineFragments::new();
-        let node_is_input_or_text_area = node.type_id() ==
-            Some(LayoutNodeType::Element(LayoutElementType::HTMLInputElement)) ||
+        let node_is_input_or_text_area = (node.type_id() ==
+            Some(LayoutNodeType::Element(LayoutElementType::HTMLInputElement)) &&
+            !node.is_input_type_range()) ||
             node.type_id() ==
                 Some(LayoutNodeType::Element(
                     LayoutElementType::HTMLTextAreaElement,

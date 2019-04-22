@@ -908,6 +908,9 @@ pub trait TElement:
         hints: &mut V,
     ) where
         V: Push<ApplicableDeclarationBlock>;
+
+    /// Returns whether this element is an input of range type.
+    fn is_input_type_range(&self) -> bool;
 }
 
 /// TNode and TElement aren't Send because we want to be careful and explicit

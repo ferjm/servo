@@ -1109,6 +1109,8 @@ pub trait LayoutNodeHelpers {
     fn iframe_browsing_context_id(&self) -> Option<BrowsingContextId>;
     fn iframe_pipeline_id(&self) -> Option<PipelineId>;
     fn opaque(&self) -> OpaqueNode;
+
+    fn is_input_type_range(&self) -> bool;
 }
 
 impl LayoutNodeHelpers for LayoutDom<Node> {
@@ -1295,6 +1297,14 @@ impl LayoutNodeHelpers for LayoutDom<Node> {
     #[allow(unsafe_code)]
     fn opaque(&self) -> OpaqueNode {
         unsafe { OpaqueNode(self.get_jsobject() as usize) }
+    }
+
+    #[allow(unsafe_code)]
+    fn is_input_type_range(&self) -> bool {
+        if let Some(input) = self.downcast::<HTMLInputElement>() {
+            return unsafe { input.is_input_type_range() };
+        }
+        false
     }
 }
 

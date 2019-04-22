@@ -623,6 +623,10 @@ impl<'le> TElement for ServoLayoutElement<'le> {
     fn containing_shadow(&self) -> Option<ShadowRoot<'le>> {
         None
     }
+
+    fn is_input_type_range(&self) -> bool {
+        self.element.is_input_type_range()
+    }
 }
 
 impl<'le> PartialEq for ServoLayoutElement<'le> {
@@ -1262,6 +1266,10 @@ impl<'le> ThreadSafeLayoutElement for ServoThreadSafeLayoutElement<'le> {
             .get_data()
             .expect("Unstyled layout node?")
             .borrow()
+    }
+
+    fn is_input_type_range(&self) -> bool {
+        self.element.is_input_type_range()
     }
 }
 

@@ -369,6 +369,8 @@ pub trait LayoutHTMLInputElementHelpers {
     unsafe fn checked_state_for_layout(self) -> bool;
     #[allow(unsafe_code)]
     unsafe fn indeterminate_state_for_layout(self) -> bool;
+    #[allow(unsafe_code)]
+    unsafe fn is_input_type_range(self) -> bool;
 }
 
 #[allow(unsafe_code)]
@@ -464,6 +466,11 @@ impl LayoutHTMLInputElementHelpers for LayoutDom<HTMLInputElement> {
         self.upcast::<Element>()
             .get_state_for_layout()
             .contains(ElementState::IN_INDETERMINATE_STATE)
+    }
+
+    #[allow(unsafe_code)]
+    unsafe fn is_input_type_range(self) -> bool {
+        (*self.unsafe_get()).input_type() == InputType::Range
     }
 }
 

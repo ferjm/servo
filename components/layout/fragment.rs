@@ -210,6 +210,8 @@ pub enum SpecificFragmentInfo {
     /// Text fragments may be partially truncated (in which case this renders like a text fragment).
     /// Other fragments can only be totally truncated or not truncated at all.
     TruncatedFragment(Box<TruncatedFragmentInfo>),
+
+    InputRange(InputRangeFragmentInfo),
 }
 
 impl SpecificFragmentInfo {
@@ -219,6 +221,7 @@ impl SpecificFragmentInfo {
             SpecificFragmentInfo::GeneratedContent(_) |
             SpecificFragmentInfo::Iframe(_) |
             SpecificFragmentInfo::Image(_) |
+            SpecificFragmentInfo::InputRange(_) |
             SpecificFragmentInfo::Media(_) |
             SpecificFragmentInfo::ScannedText(_) |
             SpecificFragmentInfo::Svg(_) |
@@ -253,6 +256,7 @@ impl SpecificFragmentInfo {
                 "SpecificFragmentInfo::InlineAbsoluteHypothetical"
             },
             SpecificFragmentInfo::InlineBlock(_) => "SpecificFragmentInfo::InlineBlock",
+            SpecificFragmentInfo::InputRange(_) => "SpecificFragmentInfo::InputRange",
             SpecificFragmentInfo::ScannedText(_) => "SpecificFragmentInfo::ScannedText",
             SpecificFragmentInfo::Svg(_) => "SpecificFragmentInfo::Svg",
             SpecificFragmentInfo::Table => "SpecificFragmentInfo::Table",
@@ -652,6 +656,17 @@ impl TableColumnFragmentInfo {
     }
 }
 
+#[derive(Clone)]
+pub struct InputRangeFragmentInfo {
+    pub value: f32,
+}
+
+impl InputRangeFragmentInfo {
+    pub fn new(value: f32) -> InputRangeFragmentInfo {
+        Self { value }
+    }
+}
+
 /// A wrapper for fragments that have been truncated by the `text-overflow` property.
 /// This may have an associated text node, or, if the fragment was completely truncated,
 /// it may act as an invisible marker for incremental reflow.
@@ -878,6 +893,7 @@ impl Fragment {
             SpecificFragmentInfo::Iframe(_) |
             SpecificFragmentInfo::Image(_) |
             SpecificFragmentInfo::InlineAbsolute(_) |
+            SpecificFragmentInfo::InputRange(_) |
             SpecificFragmentInfo::Multicol |
             SpecificFragmentInfo::Svg(_) => {
                 QuantitiesIncludedInIntrinsicInlineSizes::all()
@@ -1598,6 +1614,7 @@ impl Fragment {
         match self.specific {
             SpecificFragmentInfo::Generic |
             SpecificFragmentInfo::GeneratedContent(_) |
+            SpecificFragmentInfo::InputRange(_) |
             SpecificFragmentInfo::Table |
             SpecificFragmentInfo::TableCell |
             SpecificFragmentInfo::TableColumn(_) |
@@ -2075,6 +2092,7 @@ impl Fragment {
             SpecificFragmentInfo::TruncatedFragment(ref t) if t.text_info.is_none() => return,
             SpecificFragmentInfo::Generic |
             SpecificFragmentInfo::GeneratedContent(_) |
+            SpecificFragmentInfo::InputRange(_) |
             SpecificFragmentInfo::Table |
             SpecificFragmentInfo::TableCell |
             SpecificFragmentInfo::TableRow |
@@ -2166,6 +2184,7 @@ impl Fragment {
             SpecificFragmentInfo::TruncatedFragment(ref t) if t.text_info.is_none() => return,
             SpecificFragmentInfo::Generic |
             SpecificFragmentInfo::GeneratedContent(_) |
+            SpecificFragmentInfo::InputRange(_) |
             SpecificFragmentInfo::Table |
             SpecificFragmentInfo::TableCell |
             SpecificFragmentInfo::TableRow |
@@ -2270,6 +2289,7 @@ impl Fragment {
             SpecificFragmentInfo::Canvas(_) |
             SpecificFragmentInfo::Iframe(_) |
             SpecificFragmentInfo::Image(_) |
+            SpecificFragmentInfo::InputRange(_) |
             SpecificFragmentInfo::Media(_) |
             SpecificFragmentInfo::Svg(_) |
             SpecificFragmentInfo::Generic |
@@ -2591,6 +2611,7 @@ impl Fragment {
             SpecificFragmentInfo::GeneratedContent(_) |
             SpecificFragmentInfo::Iframe(_) |
             SpecificFragmentInfo::Image(_) |
+            SpecificFragmentInfo::InputRange(_) |
             SpecificFragmentInfo::Media(_) |
             SpecificFragmentInfo::ScannedText(_) |
             SpecificFragmentInfo::Svg(_) |
@@ -3108,6 +3129,7 @@ impl Fragment {
             SpecificFragmentInfo::InlineAbsolute(_) |
             SpecificFragmentInfo::InlineAbsoluteHypothetical(_) |
             SpecificFragmentInfo::InlineBlock(_) |
+            SpecificFragmentInfo::InputRange(_) |
             SpecificFragmentInfo::Multicol |
             SpecificFragmentInfo::MulticolColumn |
             SpecificFragmentInfo::Table |
