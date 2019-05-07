@@ -24,3 +24,8 @@ opt-level = 3
 #
 #     [patch."https://github.com/servo/<repository>"]
 #     <crate> = { path = "/path/to/local/checkout" }
+
+[patch."https://github.com/servo/media"]
+servo-media = { path = "../media/servo-media" }
+servo-media-gstreamer = { path = "../media/backends/gstreamer" }
+servo-media-dummy = { path = "../media/backends/dummy" }
