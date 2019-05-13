@@ -29,7 +29,7 @@ use servo::style_traits::DevicePixel;
 use servo::webrender_api::{
     DeviceIntPoint, DeviceIntRect, DeviceIntSize, FramebufferIntSize, ScrollLocation,
 };
-use servo_media::player::context as MediaPlayerCtxt;
+use servo_media::player::context::{GlContext as PlayerGLContext, NativeDisplay};
 use std::cell::{Cell, RefCell};
 use std::mem;
 use std::rc::Rc;
@@ -509,12 +509,78 @@ impl WindowMethods for Window {
         true
     }
 
-    fn get_gl_context(&self) -> MediaPlayerCtxt::GlContext {
-        MediaPlayerCtxt::GlContext::Unknown
+    fn get_gl_context(&self) -> PlayerGLContext {
+        use glutin::os::GlContextExt;
+
+        let context = self.gl_window.context();
+        let raw_handle = unsafe { context.raw_handle() };
+
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "dragonfly",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        ))]
+        let gl_context = {
+            use glutin::os::unix::RawHandle;
+
+            match raw_handle {
+                RawHandle::Egl(egl_context) => PlayerGLContext::Egl(egl_context as usize),
+                RawHandle::Glx(glx_context) => PlayerGLContext::Glx(glx_context as usize),
+            }
+        };
+
+        #[cfg(not(any(
+            target_os = "linux",
+            target_os = "dragonfly",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        )))]
+        let gl_context = {
+            println!("GL rendering unavailable for this platform");
+            PlayerGLContext::Unknown
+        };
+
+        gl_context
     }
 
-    fn get_native_display(&self) -> MediaPlayerCtxt::NativeDisplay {
-        MediaPlayerCtxt::NativeDisplay::Unknown
+    fn get_native_display(&self) -> NativeDisplay {
+        #[cfg(any(
+            target_os = "linux",
+            target_os = "dragonfly",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        ))]
+        let native_display = {
+            // We're not using an updated version of glutin!!!
+            //if let Some(display) = unsafe { self.gl_window.context().get_egl_display() } {
+            //    NativeDisplay::Egl(display as usize)
+            //} else {
+                use glutin::os::unix::WindowExt;
+
+                if let Some(display) = self.gl_window.window().get_wayland_display() {
+                    NativeDisplay::Wayland(display as usize)
+                } else if let Some(display) = self.gl_window.window().get_xlib_display() {
+                    NativeDisplay::X11(display as usize)
+                } else {
+                    NativeDisplay::Unknown
+                }
+            //}
+        };
+
+        #[cfg(not(any(
+            target_os = "linux",
+            target_os = "dragonfly",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        )))]
+        let native_display = NativeDisplay::Unknown;
+
+        native_display
     }
 }
 
