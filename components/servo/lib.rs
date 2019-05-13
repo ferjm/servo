@@ -67,7 +67,7 @@ use canvas::webgl_thread::WebGLThreads;
 use compositing::compositor_thread::{
     CompositorProxy, CompositorReceiver, InitialCompositorState, Msg,
 };
-use compositing::windowing::{EmbedderMethods, WindowEvent, WindowMethods};
+use compositing::windowing::{EmbedderMethods, WindowEvent, WindowGLContext, WindowMethods};
 use compositing::{CompositingReason, IOCompositor, ShutdownState};
 #[cfg(all(
     not(target_os = "windows"),
@@ -294,6 +294,11 @@ where
             None
         };
 
+        let player_context = WindowGLContext {
+            gl_context: window.get_gl_context(),
+            native_display: window.get_native_display(),
+        };
+
         // Create the constellation, which maintains the engine
         // pipelines, including the script and layout threads, as well
         // as the navigation context.
@@ -311,6 +316,7 @@ where
             webrender_api_sender,
             window.gl(),
             webvr_services,
+            player_context,
         );
 
         // Send the constellation's swmanager sender to service worker manager thread
@@ -611,6 +617,7 @@ fn create_constellation(
     webrender_api_sender: webrender_api::RenderApiSender,
     window_gl: Rc<dyn gl::Gl>,
     webvr_services: Option<VRServiceManager>,
+    player_context: WindowGLContext,
 ) -> (Sender<ConstellationMsg>, SWManagerSenders) {
     let bluetooth_thread: IpcSender<BluetoothRequest> =
         BluetoothThreadFactory::new(embedder_proxy.clone());
@@ -645,6 +652,7 @@ fn create_constellation(
             (None, None, None)
         };
 
+    // @TODO(victor): replace initialization of the GLContextFactor with PlayerContext (??)
     // GLContext factory used to create WebGL Contexts
     let gl_factory = if opts::get().should_use_osmesa() {
         GLContextFactory::current_osmesa_handle()
@@ -652,6 +660,7 @@ fn create_constellation(
         GLContextFactory::current_native_handle(&compositor_proxy)
     };
 
+    // @TODO(victor): replace this with a general external image handler for either webgl and player (??)
     // Initialize WebGL Thread entry point.
     let webgl_threads = gl_factory.map(|factory| {
         let (webgl_threads, image_handler, output_handler) = WebGLThreads::new(
@@ -687,6 +696,7 @@ fn create_constellation(
         webrender_api_sender,
         webgl_threads,
         webvr_chan,
+        player_context,
     };
     let (constellation_chan, from_swmanager_sender) = Constellation::<
         script_layout_interface::message::Msg,

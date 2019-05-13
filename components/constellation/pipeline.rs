@@ -7,6 +7,7 @@ use background_hang_monitor::HangMonitorRegister;
 use bluetooth_traits::BluetoothRequest;
 use canvas_traits::webgl::WebGLPipeline;
 use compositing::compositor_thread::Msg as CompositorMsg;
+use compositing::windowing::WindowGLContext;
 use compositing::CompositionPipeline;
 use compositing::CompositorProxy;
 use crossbeam_channel::Sender;
@@ -30,7 +31,7 @@ use script_traits::{ConstellationControlMsg, DiscardBrowsingContext, ScriptToCon
 use script_traits::{DocumentActivity, InitialScriptState};
 use script_traits::{LayoutControlMsg, LayoutMsg, LoadData};
 use script_traits::{NewLayoutInfo, SWManagerMsg, SWManagerSenders};
-use script_traits::{ScriptThreadFactory, TimerSchedulerMsg, WindowSizeData};
+use script_traits::{ScriptThreadFactory, TimerSchedulerMsg, WindowGLContextData, WindowSizeData};
 use servo_config::opts::{self, Opts};
 use servo_config::{prefs, prefs::PrefValue};
 use servo_url::ServoUrl;
@@ -188,6 +189,9 @@ pub struct InitialPipelineState {
 
     /// A channel to the webvr thread.
     pub webvr_chan: Option<IpcSender<WebVRMsg>>,
+
+    /// Application window's GL Context for Media player
+    pub player_context: WindowGLContext,
 }
 
 pub struct NewPipeline {
@@ -305,6 +309,10 @@ impl Pipeline {
                     webrender_document: state.webrender_document,
                     webgl_chan: state.webgl_chan,
                     webvr_chan: state.webvr_chan,
+                    player_context: WindowGLContextData {
+                        gl_context: state.player_context.gl_context,
+                        native_display: state.player_context.native_display,
+                    }
                 };
 
                 // Spawn the child process.
@@ -510,6 +518,7 @@ pub struct UnprivilegedPipelineContent {
     webrender_document: webrender_api::DocumentId,
     webgl_chan: Option<WebGLPipeline>,
     webvr_chan: Option<IpcSender<WebVRMsg>>,
+    player_context: WindowGLContextData,
 }
 
 impl UnprivilegedPipelineContent {
@@ -557,6 +566,7 @@ impl UnprivilegedPipelineContent {
                 webrender_document: self.webrender_document,
                 webrender_api_sender: self.webrender_api_sender.clone(),
                 layout_is_busy: layout_thread_busy_flag.clone(),
+                player_context: self.player_context.clone(),
             },
             self.load_data.clone(),
         );

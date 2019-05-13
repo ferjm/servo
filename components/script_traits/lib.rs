@@ -47,6 +47,7 @@ use profile_traits::mem;
 use profile_traits::time as profile_time;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use servo_atoms::Atom;
+use servo_media::player::context::{GlContext, PlayerGLContext, NativeDisplay};
 use servo_url::ImmutableOrigin;
 use servo_url::ServoUrl;
 use std::collections::HashMap;
@@ -555,6 +556,25 @@ pub fn precise_time_ns() -> NsDuration {
     Length::new(time::precise_time_ns())
 }
 
+/// Data about the Window's GL context.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct WindowGLContextData {
+    /// GL context
+    pub gl_context: GlContext,
+    /// Native display
+    pub native_display: NativeDisplay,
+}
+
+impl PlayerGLContext for WindowGLContextData {
+    fn get_gl_context(&self) -> GlContext {
+        self.gl_context.clone()
+    }
+
+    fn get_native_display(&self) -> NativeDisplay {
+        self.native_display.clone()
+    }
+}
+
 /// Data needed to construct a script thread.
 ///
 /// NB: *DO NOT* add any Senders or Receivers here! pcwalton will have to rewrite your code if you
@@ -611,6 +631,8 @@ pub struct InitialScriptState {
     pub webrender_api_sender: RenderApiSender,
     /// Flag to indicate if the layout thread is busy handling a request.
     pub layout_is_busy: Arc<AtomicBool>,
+    /// Application window's GL Context for Media player
+    pub player_context: WindowGLContextData,
 }
 
 /// This trait allows creating a `ScriptThread` without depending on the `script`

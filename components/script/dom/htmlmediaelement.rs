@@ -69,7 +69,6 @@ use net_traits::{CoreResourceMsg, FetchChannels, FetchMetadata, FetchResponseLis
 use net_traits::{NetworkError, ResourceFetchTiming, ResourceTimingType};
 use script_layout_interface::HTMLMediaData;
 use servo_config::pref;
-use servo_media::player::context::{GlContext, NativeDisplay, PlayerGLContext};
 use servo_media::player::frame::{Frame, FrameRenderer};
 use servo_media::player::{PlaybackState, Player, PlayerError, PlayerEvent, StreamType};
 use servo_media::{ServoMedia, SupportsMediaType};
@@ -157,16 +156,6 @@ impl FrameRenderer for MediaFrameRenderer {
             },
         }
         self.api.update_resources(txn.resource_updates);
-    }
-}
-
-struct PlayerContextDummy();
-impl PlayerGLContext for PlayerContextDummy {
-    fn get_gl_context(&self) -> GlContext {
-        return GlContext::Unknown;
-    }
-    fn get_native_display(&self) -> NativeDisplay {
-        return NativeDisplay::Unknown;
     }
 }
 
@@ -1215,9 +1204,10 @@ impl HTMLMediaElement {
             _ => StreamType::Seekable,
         };
 
+        let window = window_from_node(self);
         let player = ServoMedia::get()
             .unwrap()
-            .create_player(stream_type, Box::new(PlayerContextDummy()));
+            .create_player(stream_type, Box::new(window.get_player_context()));
 
         let (action_sender, action_receiver) = ipc::channel().unwrap();
         player.register_event_handler(action_sender);
@@ -1226,7 +1216,6 @@ impl HTMLMediaElement {
         *self.player.borrow_mut() = Some(player);
 
         let trusted_node = Trusted::new(self);
-        let window = window_from_node(self);
         let (task_source, canceller) = window
             .task_manager()
             .dom_manipulation_task_source_with_canceller();

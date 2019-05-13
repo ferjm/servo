@@ -110,6 +110,7 @@ use canvas_traits::canvas::CanvasMsg;
 use clipboard::{ClipboardContext, ClipboardProvider};
 use compositing::compositor_thread::CompositorProxy;
 use compositing::compositor_thread::Msg as ToCompositorMsg;
+use compositing::windowing::WindowGLContext;
 use compositing::SendableFrameTree;
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use devtools_traits::{ChromeToDevtoolsControlMsg, DevtoolsControlMsg};
@@ -379,6 +380,9 @@ pub struct Constellation<Message, LTF, STF> {
     /// Bitmask which indicates which combination of mouse buttons are
     /// currently being pressed.
     pressed_mouse_buttons: u16,
+
+    /// Application window's GL Context for Media player
+    player_context: WindowGLContext,
 }
 
 /// State needed to construct a constellation.
@@ -424,6 +428,9 @@ pub struct InitialConstellationState {
 
     /// A channel to the webgl thread.
     pub webvr_chan: Option<IpcSender<WebVRMsg>>,
+
+    /// Application window's GL Context for Media player
+    pub player_context: WindowGLContext,
 }
 
 /// Data needed for webdriver
@@ -722,6 +729,7 @@ where
                     canvas_chan: CanvasPaintThread::start(),
                     pending_approval_navigations: HashMap::new(),
                     pressed_mouse_buttons: 0,
+                    player_context: state.player_context,
                 };
 
                 constellation.run();
@@ -851,6 +859,7 @@ where
                 .as_ref()
                 .map(|threads| threads.pipeline()),
             webvr_chan: self.webvr_chan.clone(),
+            player_context: self.player_context.clone(),
         });
 
         let pipeline = match result {

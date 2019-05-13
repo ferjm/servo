@@ -133,7 +133,7 @@ use script_traits::{MouseButton, MouseEventType, NewLayoutInfo};
 use script_traits::{Painter, ProgressiveWebMetricType, ScriptMsg, ScriptThreadFactory};
 use script_traits::{ScriptToConstellationChan, TimerEvent, TimerSchedulerMsg};
 use script_traits::{TimerSource, TouchEventType, TouchId, UntrustedNodeAddress};
-use script_traits::{UpdatePipelineIdReason, WindowSizeData, WindowSizeType};
+use script_traits::{UpdatePipelineIdReason, WindowGLContextData, WindowSizeData, WindowSizeType};
 use servo_atoms::Atom;
 use servo_config::opts;
 use servo_url::{ImmutableOrigin, MutableOrigin, ServoUrl};
@@ -519,6 +519,8 @@ unsafe_no_jsmanaged_fields!(TaskQueue<MainThreadScriptMsg>);
 unsafe_no_jsmanaged_fields!(BackgroundHangMonitorRegister);
 unsafe_no_jsmanaged_fields!(BackgroundHangMonitor);
 
+unsafe_no_jsmanaged_fields!(WindowGLContextData);
+
 #[derive(JSTraceable)]
 // ScriptThread instances are rooted on creation, so this is okay
 #[allow(unrooted_must_root)]
@@ -650,8 +652,11 @@ pub struct ScriptThread {
     /// The Webrender Document ID associated with this thread.
     webrender_document: DocumentId,
 
-    /// FIXME(victor):
+    /// Webrender API sender.
     webrender_api_sender: RenderApiSender,
+
+    /// Application window's GL Context for Media player
+    player_context: WindowGLContextData,
 }
 
 /// In the event of thread panic, all data on the stack runs its destructor. However, there
@@ -1169,6 +1174,8 @@ impl ScriptThread {
 
             webrender_document: state.webrender_document,
             webrender_api_sender: state.webrender_api_sender,
+
+            player_context: state.player_context,
         }
     }
 
@@ -2889,6 +2896,7 @@ impl ScriptThread {
             self.webrender_document,
             self.webrender_api_sender.clone(),
             incomplete.layout_is_busy,
+            self.player_context.clone(),
         );
 
         // Initialize the browsing context for the window.

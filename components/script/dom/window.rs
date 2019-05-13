@@ -103,7 +103,7 @@ use script_layout_interface::{PendingImageState, TrustedNodeAddress};
 use script_traits::webdriver_msg::{WebDriverJSError, WebDriverJSResult};
 use script_traits::{ConstellationControlMsg, DocumentState, LoadData};
 use script_traits::{ScriptMsg, ScriptToConstellationChan, ScrollState, TimerEvent, TimerEventId};
-use script_traits::{TimerSchedulerMsg, WindowSizeData, WindowSizeType};
+use script_traits::{TimerSchedulerMsg, WindowGLContextData, WindowSizeData, WindowSizeType};
 use selectors::attr::CaseSensitivity;
 use servo_config::opts;
 use servo_geometry::{f32_rect_to_au_rect, MaxRect};
@@ -299,6 +299,10 @@ pub struct Window {
     /// Flag that indicates if the layout thread is busy handling a request.
     #[ignore_malloc_size_of = "Arc<T> is hard"]
     layout_is_busy: Arc<AtomicBool>,
+
+    /// Window's GL context from application
+    #[ignore_malloc_size_of = "defined in script_thread"]
+    player_context: WindowGLContextData,
 }
 
 impl Window {
@@ -449,6 +453,10 @@ impl Window {
 
     pub fn get_webrender_api_sender(&self) -> RenderApiSender {
         self.webrender_api_sender.clone()
+    }
+
+    pub fn get_player_context(&self) -> WindowGLContextData {
+        self.player_context.clone()
     }
 }
 
@@ -2037,6 +2045,7 @@ impl Window {
         webrender_document: DocumentId,
         webrender_api_sender: RenderApiSender,
         layout_is_busy: Arc<AtomicBool>,
+        player_context: WindowGLContextData,
     ) -> DomRoot<Self> {
         let layout_rpc: Box<dyn LayoutRPC + Send> = {
             let (rpc_send, rpc_recv) = unbounded();
@@ -2110,6 +2119,7 @@ impl Window {
             webrender_api_sender,
             has_sent_idle_message: Cell::new(false),
             layout_is_busy,
+            player_context,
         });
 
         unsafe { WindowBinding::Wrap(runtime.cx(), win) }

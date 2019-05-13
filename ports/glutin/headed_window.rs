@@ -29,6 +29,7 @@ use servo::style_traits::DevicePixel;
 use servo::webrender_api::{
     DeviceIntPoint, DeviceIntRect, DeviceIntSize, FramebufferIntSize, ScrollLocation,
 };
+use servo_media::player::context as MediaPlayerCtxt;
 use std::cell::{Cell, RefCell};
 use std::mem;
 use std::rc::Rc;
@@ -506,6 +507,14 @@ impl WindowMethods for Window {
             warn!("Couldn't make window current: {}", err);
         }
         true
+    }
+
+    fn get_gl_context(&self) -> MediaPlayerCtxt::GlContext {
+        MediaPlayerCtxt::GlContext::Unknown
+    }
+
+    fn get_native_display(&self) -> MediaPlayerCtxt::NativeDisplay {
+        MediaPlayerCtxt::NativeDisplay::Unknown
     }
 }
 
