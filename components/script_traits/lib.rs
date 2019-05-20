@@ -47,7 +47,7 @@ use profile_traits::mem;
 use profile_traits::time as profile_time;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use servo_atoms::Atom;
-use servo_media::player::context::{GlContext, PlayerGLContext, NativeDisplay};
+use servo_media::player::context::{GlContext, NativeDisplay, PlayerGLContext};
 use servo_url::ImmutableOrigin;
 use servo_url::ServoUrl;
 use std::collections::HashMap;

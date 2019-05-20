@@ -312,7 +312,7 @@ impl Pipeline {
                     player_context: WindowGLContextData {
                         gl_context: state.player_context.gl_context,
                         native_display: state.player_context.native_display,
-                    }
+                    },
                 };
 
                 // Spawn the child process.
