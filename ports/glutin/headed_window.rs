@@ -576,15 +576,19 @@ impl WindowMethods for Window {
     }
 
     fn get_gl_context(&self) -> PlayerGLContext {
+        debug!("get_gl_context");
         if pref!(media.glvideo.enabled) {
             self.gl_context.borrow().raw_context()
         } else {
+            debug!("GL video preference media.glvideo.enabled is false");
             PlayerGLContext::Unknown
         }
     }
 
     fn get_native_display(&self) -> NativeDisplay {
+        debug!("get_native_display");
         if !pref!(media.glvideo.enabled) {
+            debug!("GL video preference media.glvideo.enabled is false");
             return NativeDisplay::Unknown;
         }
 
@@ -599,6 +603,7 @@ impl WindowMethods for Window {
         ))]
         let native_display = {
             if let Some(display) = self.gl_context.borrow().egl_display() {
+                debug!("GL video: NativeDisplay::Egl");
                 NativeDisplay::Egl(display as usize)
             } else {
                 #[cfg(any(
@@ -612,12 +617,15 @@ impl WindowMethods for Window {
                     use glutin::os::unix::WindowExt;
 
                     if let Some(display) = self.gl_context.borrow().window().get_wayland_display() {
+                        debug!("GL video: NativeDisplay::Wayland");
                         NativeDisplay::Wayland(display as usize)
                     } else if let Some(display) =
                         self.gl_context.borrow().window().get_xlib_display()
                     {
+                        debug!("GL video: NativeDisplay::X11");
                         NativeDisplay::X11(display as usize)
                     } else {
+                        debug!("GL video: NativeDisplay::Unknown");
                         NativeDisplay::Unknown
                     }
                 }
@@ -629,7 +637,10 @@ impl WindowMethods for Window {
                     target_os = "netbsd",
                     target_os = "openbsd",
                 )))]
-                NativeDisplay::Unknown
+                {
+                    debug!("GL video not supported on this platform");
+                    NativeDisplay::Unknown
+                }
             }
         };
 
@@ -642,7 +653,10 @@ impl WindowMethods for Window {
             target_os = "windows",
             target_os = "android",
         )))]
-        let native_display = NativeDisplay::Unknown;
+        let native_display = {
+            debug!("GL video not supported on this platform");
+            NativeDisplay::Unknown
+        };
 
         native_display
     }
@@ -662,13 +676,15 @@ impl WindowMethods for Window {
             .and_then(|v| v.parse::<u32>().ok())
             .unwrap_or(20);
 
-        match api {
+        let api = match api {
             glutin::Api::OpenGl if major >= 3 && minor >= 2 => GlApi::OpenGL3,
             glutin::Api::OpenGl => GlApi::OpenGL,
             glutin::Api::OpenGlEs if major > 1 => GlApi::Gles2,
             glutin::Api::OpenGlEs => GlApi::Gles1,
             _ => GlApi::None,
-        }
+        };
+        debug!("GL API {:?}", api);
+        api
     }
 }
 
