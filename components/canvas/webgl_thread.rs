@@ -46,6 +46,7 @@ use canvas_traits::webgl::YAxisTreatment;
 use euclid::default::Size2D;
 use fnv::FnvHashMap;
 use half::f16;
+use ipc_channel::ipc::IpcBytesSender;
 use pixels::{self, PixelFormat};
 use servo_config::opts;
 use sparkle::gl;
@@ -333,6 +334,9 @@ impl WebGLThread {
             },
             WebGLMsg::DOMToTextureCommand(command) => {
                 self.handle_dom_to_texture(command);
+            },
+            WebGLMsg::GetTexturePixels(ctx_id, texture_id, size, sender) => {
+                self.handle_get_texture_pixels(ctx_id, texture_id, size, sender);
             },
             WebGLMsg::Exit => {
                 return true;
@@ -836,6 +840,52 @@ impl WebGLThread {
                 Some((dom_data.texture_id.get(), dom_data.size))
             })
         })
+    }
+
+    fn handle_get_texture_pixels(
+        &mut self,
+        context_id: WebGLContextId,
+        texture_id: u32,
+        size: Size2D<u32>,
+        sender: IpcBytesSender,
+    ) {
+        let data = Self::make_current_if_needed_mut(
+            &self.device,
+            context_id,
+            &mut self.contexts,
+            &mut self.bound_context_id,
+        );
+        if let Some(data) = data {
+            let fbo = data.gl.gen_framebuffers(1)[0];
+            data.gl.bind_framebuffer(gl::FRAMEBUFFER, fbo);
+
+            data.gl.framebuffer_texture_2d(
+                gl::FRAMEBUFFER,
+                gl::COLOR_ATTACHMENT0,
+                gl::TEXTURE_2D,
+                texture_id,
+                0,
+            );
+
+            debug_assert_eq!(
+                (
+                    data.gl.check_framebuffer_status(gl::FRAMEBUFFER),
+                    data.gl.get_error()
+                ),
+                (gl::FRAMEBUFFER_COMPLETE, gl::NO_ERROR)
+            );
+
+            let pixels = data.gl.read_pixels(
+                0,
+                0,
+                size.width as i32,
+                size.height as i32,
+                gl::RGBA,
+                gl::UNSIGNED_BYTE,
+            );
+
+            sender.send(&pixels).unwrap();
+        }
     }
 
     /// Gets a reference to a Context for a given WebGLContextId and makes it current if required.

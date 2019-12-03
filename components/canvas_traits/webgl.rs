@@ -83,6 +83,8 @@ pub enum WebGLMsg {
     ),
     /// Performs a buffer swap.
     SwapBuffers(Vec<SwapChainId>, WebGLSender<()>),
+    /// Get texture bytes.
+    GetTexturePixels(WebGLContextId, u32, Size2D<u32>, IpcBytesSender),
     /// Frees all resources and closes the thread.
     Exit,
 }
@@ -203,6 +205,21 @@ impl WebGLMsgSender {
 
     pub fn send_dom_to_texture(&self, command: DOMToTextureCommand) -> WebGLSendResult {
         self.sender.send(WebGLMsg::DOMToTextureCommand(command))
+    }
+
+    #[inline]
+    pub fn send_get_texture_pixels(
+        &self,
+        texture_id: u32,
+        size: Size2D<u32>,
+        sender: IpcBytesSender,
+    ) -> WebGLSendResult {
+        self.sender.send(WebGLMsg::GetTexturePixels(
+            self.ctx_id,
+            texture_id,
+            size,
+            sender,
+        ))
     }
 }
 

@@ -64,7 +64,7 @@ use canvas_traits::webgl::{
 use dom_struct::dom_struct;
 use embedder_traits::EventLoopWaker;
 use euclid::default::{Point2D, Rect, Size2D};
-use ipc_channel::ipc::{self, IpcSharedMemory};
+use ipc_channel::ipc::{self, IpcBytesSender, IpcSharedMemory};
 use js::jsapi::{JSContext, JSObject, Type};
 use js::jsval::{BooleanValue, DoubleValue, Int32Value, JSVal, UInt32Value};
 use js::jsval::{NullValue, ObjectValue, UndefinedValue};
@@ -613,8 +613,13 @@ impl WebGLRenderingContext {
                 Some((data, size)) => {
                     let data = match data {
                         VideoFrameData::Raw(data) => data,
-                        VideoFrameData::Gl(_) => {
-                            IpcSharedMemory::from_bytes(&vec![0; size.area() as usize * 4])
+                        VideoFrameData::Gl(texture_id) => {
+                            let (sender, receiver) = ipc::bytes_channel().unwrap();
+                            self.webgl_sender
+                                .send_get_texture_pixels(texture_id, size, sender)
+                                .unwrap();
+                            let data = receiver.recv().unwrap();
+                            IpcSharedMemory::from_bytes(&data[0..size.area() as usize * 4])
                         },
                     };
                     TexPixels::new(data, size, PixelFormat::BGRA8, false)
@@ -4496,6 +4501,18 @@ impl WebGLMessageSender {
 
     pub fn send_dom_to_texture(&self, command: DOMToTextureCommand) -> WebGLSendResult {
         self.wake_after_send(|| self.sender.send_dom_to_texture(command))
+    }
+
+    pub fn send_get_texture_pixels(
+        &self,
+        texture_id: u32,
+        size: Size2D<u32>,
+        sender: IpcBytesSender,
+    ) -> WebGLSendResult {
+        self.wake_after_send(|| {
+            self.sender
+                .send_get_texture_pixels(texture_id, size, sender)
+        })
     }
 }
 
