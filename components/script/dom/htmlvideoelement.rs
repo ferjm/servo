@@ -43,6 +43,11 @@ use std::sync::{Arc, Mutex};
 const DEFAULT_WIDTH: u32 = 300;
 const DEFAULT_HEIGHT: u32 = 150;
 
+pub enum VideoFrameData {
+    Raw(ipc::IpcSharedMemory),
+    Gl(u32),
+}
+
 #[dom_struct]
 pub struct HTMLVideoElement {
     htmlmediaelement: HTMLMediaElement,
@@ -114,7 +119,7 @@ impl HTMLVideoElement {
         LoadBlocker::terminate(&mut *self.load_blocker.borrow_mut());
     }
 
-    pub fn get_current_frame_data(&self) -> Option<(Option<ipc::IpcSharedMemory>, Size2D<u32>)> {
+    pub fn get_current_frame_data(&self) -> Option<(VideoFrameData, Size2D<u32>)> {
         let frame = self.htmlmediaelement.get_current_frame();
         if frame.is_some() {
             *self.last_frame.borrow_mut() = frame;
@@ -124,11 +129,11 @@ impl HTMLVideoElement {
             Some(frame) => {
                 let size = Size2D::new(frame.get_width() as u32, frame.get_height() as u32);
                 if !frame.is_gl_texture() {
-                    let data = Some(ipc::IpcSharedMemory::from_bytes(&frame.get_data()));
+                    let data =
+                        VideoFrameData::Raw(ipc::IpcSharedMemory::from_bytes(&frame.get_data()));
                     Some((data, size))
                 } else {
-                    // XXX(victor): here we only have the GL texture ID.
-                    Some((None, size))
+                    Some((VideoFrameData::Gl(frame.get_texture_id()), size))
                 }
             },
             None => None,

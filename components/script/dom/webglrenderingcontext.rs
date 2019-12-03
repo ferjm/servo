@@ -24,6 +24,7 @@ use crate::dom::event::{Event, EventBubbles, EventCancelable};
 use crate::dom::htmlcanvaselement::utils as canvas_utils;
 use crate::dom::htmlcanvaselement::HTMLCanvasElement;
 use crate::dom::htmliframeelement::HTMLIFrameElement;
+use crate::dom::htmlvideoelement::VideoFrameData;
 use crate::dom::node::{document_from_node, window_from_node, Node, NodeDamage};
 use crate::dom::promise::Promise;
 use crate::dom::webgl_extensions::WebGLExtensions;
@@ -610,9 +611,12 @@ impl WebGLRenderingContext {
             },
             TexImageSource::HTMLVideoElement(video) => match video.get_current_frame_data() {
                 Some((data, size)) => {
-                    let data = data.unwrap_or_else(|| {
-                        IpcSharedMemory::from_bytes(&vec![0; size.area() as usize * 4])
-                    });
+                    let data = match data {
+                        VideoFrameData::Raw(data) => data,
+                        VideoFrameData::Gl(_) => {
+                            IpcSharedMemory::from_bytes(&vec![0; size.area() as usize * 4])
+                        },
+                    };
                     TexPixels::new(data, size, PixelFormat::BGRA8, false)
                 },
                 None => return Ok(None),
